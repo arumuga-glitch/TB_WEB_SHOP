@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Define your theme variables – light mode default */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;           
+  --card: #ffffff;
+  --card-foreground: #111827;      
+  --muted: #f3f4f6;                
+  --muted-foreground: #6b7280;     
+  --border: #e5e7eb;               
+  --input: #e5e7eb;
+  --ring: #10b981;                 
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+}
+
+/* Dark mode overrides */
+.dark {
+  --background: #0a0a0a;           
+  --foreground: #ededed;           
+  --card: #1f2937;                 
+  --card-foreground: #f3f4f6;      
+  --muted: #374151;                
+  --muted-foreground: #9ca3af;     
+  --border: #374151;               
+  --input: #374151;
+  --ring: #34d399;                 
+}
+
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+
