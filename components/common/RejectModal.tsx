@@ -49,7 +49,7 @@ export default function RejectReasonModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bottom-18 md:bottom-0 bg-black/40 flex items-end md:items-center justify-center modal">  {/* ADDED: modal class */}
+    <div className="fixed inset-0 z-[9999] bottom-18 md:bottom-0 bg-black/40 overscroll-none flex items-end md:items-center justify-center  modal">  
       
       {/* ================= MOBILE BOTTOM SHEET ================= */}
       <div className="md:hidden w-full bg-white dark:bg-gray-800 rounded-t-2xl p-5 animate-in slide-in-from-bottom duration-200 ">
@@ -87,7 +87,7 @@ export default function RejectReasonModal({
       </div>
 
       {/* ================= DESKTOP MODAL ================= */}
-      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-2xl relative">
+      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-2xl relative ">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 text-xl"

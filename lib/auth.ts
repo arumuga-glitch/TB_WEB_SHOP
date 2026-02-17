@@ -1,12 +1,13 @@
 
 import { AuthResponse } from "@/types/auth";
 import api from "./api";
+import { ENDPOINTS } from "@/lib/endpoints";
 
 export const sendOtp = async (
   mobile: string
 ): Promise<{ isNewUser: boolean }> => {
   try {
-    const res = await api.post("/auth/send-otp", {
+    const res = await api.post(ENDPOINTS.AUTH.SEND_OTP, {
       mobile_number: mobile,
     });
 
@@ -18,7 +19,7 @@ export const sendOtp = async (
       res.data.success === false &&
       res.data.message?.toLowerCase().includes("register")
     ) {
-      await api.post("/auth/register-send-otp", {
+      await api.post(ENDPOINTS.AUTH.REGISTER_SEND_OTP, {
         mobile_number: mobile,
       });
       return { isNewUser: true };
@@ -36,8 +37,8 @@ export const verifyOtpSmart = async (
   isNewUser: boolean
 ): Promise<AuthResponse> => {
   const endpoint = isNewUser
-    ? "/auth/register-verify-otp"
-    : "/auth/verify-otp";
+    ? ENDPOINTS.AUTH.REGISTER_VERIFY_OTP
+    : ENDPOINTS.AUTH.VERIFY_OTP;
 
   try {
     const res = await api.post(endpoint, {
@@ -55,7 +56,7 @@ export const verifyOtpSmart = async (
     if (isNewUser) {
       return {
         isNewUser: true,
-        id:payload.id || payload.user?.id || null,
+        id: payload.id || payload.user?.id || null,
         user: null,
         accessToken: undefined,
         expiresIn: undefined,
@@ -81,7 +82,7 @@ export const verifyOtpSmart = async (
     const msg = (err.response?.data?.message ?? err.message ?? "").toLowerCase();
 
     if (msg.includes("expired")) {
-      throw new Error( "OTP Expired");
+      throw new Error("OTP Expired");
     }
 
     if (msg.includes("invalid") || msg.includes("wrong")) {
@@ -98,16 +99,16 @@ export interface RegisterUserShopPayload {
   user_mobile_number: string;
   user_email_id: string;
   shop_name: string;
-  shop_mobile_number:string;
+  shop_mobile_number: string;
   shop_address: string;
-  shop_latitude: number;  
+  shop_latitude: number;
   shop_longitude: number;
   referral_code?: string;
 }
 
 export const registerUserAndShop = async (payload: RegisterUserShopPayload) => {
   try {
-    const res = await api.post("/auth/register-user-shop", payload);
+    const res = await api.post(ENDPOINTS.AUTH.REGISTER_USER_SHOP, payload);
     const data = res.data;
 
     if (!data?.success) {

@@ -344,14 +344,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
             {request.customerName}
           </div>
           <p className="text-sm text-gray-500 mt-1">{request.customerPhone}</p>
-          {request.status !== "completed" && (
-            <button
-              onClick={startStatusWorkflow}
-              className="text-sm px-3 py-1 mt-4 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Update Status
-            </button>
-          )}
         </div>
 
         {/* Service Request - Collapsible */}

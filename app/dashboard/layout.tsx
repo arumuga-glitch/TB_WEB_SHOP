@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,6 +10,8 @@ import { DesktopHeader } from '@/components/dashboard/DesktopHeader';
 import { MobileHeader } from '@/components/dashboard/MobileHeader';
 import { MobileBottomNav } from '@/components/dashboard/MobileBottomNav';
 import DisclaimerDialog from '@/components/dashboard/Disclaimer';
+import AgreementDialog from '@/components/dashboard/Agreement';
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -23,17 +24,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [userData, setUserData] = useState<any>(null);
 
+  const [hydrated, setHydrated] = useState(false);
+  const [shopLoaded, setShopLoaded] = useState(false);
+
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [showAgreement, setShowAgreement] = useState(false);
+
   const isOnline = shop?.is_online ?? false;
 
   const toggleNotifications = () => setShowNotifications((v) => !v);
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
-  const [hydrated, setHydrated] = useState(false);
-
+  // ------------------------------
+  // Hydration check
+  // ------------------------------
   useEffect(() => {
     setHydrated(true);
   }, []);
 
+  // ------------------------------
+  // Auth guard
+  // ------------------------------
   useEffect(() => {
     if (!hydrated) return;
 
@@ -42,10 +53,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [hydrated, accessToken, router]);
 
-
-
-  const [shopLoaded, setShopLoaded] = useState(false);
-
+  // ------------------------------
+  // Fetch shop once
+  // ------------------------------
   useEffect(() => {
     if (!user?.id || shopLoaded) return;
 
@@ -53,17 +63,36 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setShopLoaded(true);
   }, [user?.id, shopLoaded, fetchShopByUser]);
 
+  // ------------------------------
+  // Step 1 → Disclaimer Check
+  // ------------------------------
   useEffect(() => {
+    if (!hydrated) return;
+
     const accepted = localStorage.getItem("thendral_disclaimer_accepted");
+
     if (!accepted) {
       setShowDisclaimer(true);
     }
-  }, []);
+
+    setDisclaimerChecked(true);
+  }, [hydrated]);
 
   const handleAcceptDisclaimer = () => {
     localStorage.setItem("thendral_disclaimer_accepted", "true");
     setShowDisclaimer(false);
   };
+
+  // ------------------------------
+  // Step 2 → Agreement Check (after disclaimer)
+  // ------------------------------
+useEffect(() => {
+  if (!disclaimerChecked) return;
+  if (showDisclaimer) return;
+  if (!shop) return;
+  setShowAgreement(false); 
+}, [disclaimerChecked, showDisclaimer, shop]);
+
 
   useEffect(() => {
     if (!user) return;
@@ -77,17 +106,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     });
   }, [user, shop]);
 
+  // ------------------------------
+  // Prevent rendering until ready
+  // ------------------------------
+  if (!accessToken || !hydrated) return null;
 
-  if (!accessToken) {
-    return null;
+  if (showDisclaimer) {
+    return (
+      <DisclaimerDialog onAccept={handleAcceptDisclaimer} />
+    );
   }
 
+  if (showAgreement) {
+    return (
+      <AgreementDialog onAccept={() => setShowAgreement(false)} />
+    );
+  }
+
+  if (!shop) return null;
+
+  // ------------------------------
+  // Render Dashboard
+  // ------------------------------
   return (
     <div className="min-h-screen bg-slate-50 sm:bg-white dark:bg-gray-900/95">
-
-      {showDisclaimer && (
-        <DisclaimerDialog onAccept={handleAcceptDisclaimer} />
-      )}
 
       <MobileHeader
         isOnline={isOnline}
@@ -96,6 +138,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       />
 
       <DesktopSidebar handleLogout={logout} />
+
       <DesktopHeader
         showNotifications={showNotifications}
         toggleNotifications={toggleNotifications}
@@ -104,7 +147,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         toggleLoading={toggleLoading}
         userData={userData}
       />
-
 
       <main className="lg:ml-64 min-h-screen bg-slate-50 dark:bg-gray-900 rounded-lg">
         <div className="lg:mt-20 lg:p-8">{children}</div>

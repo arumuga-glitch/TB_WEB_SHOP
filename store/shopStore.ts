@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getShopByUser, toggleShopOnline } from "@/lib/api";
 import api from "@/lib/api";
+import { ENDPOINTS } from "@/lib/endpoints";
 
 export interface ShopUser {
   id: string;
@@ -111,7 +112,7 @@ export const useShopStore = create<ShopStore>((set, get) => ({
     });
 
     try {
-      await api.put(`/shop/update/${shop.id}`, {
+      await api.put(ENDPOINTS.SHOP.UPDATE(shop.id), {
         name: shop.name,
         address,
         latitude,

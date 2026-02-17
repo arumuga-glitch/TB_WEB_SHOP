@@ -6,6 +6,7 @@ import { useShopStore } from "@/store/shopStore";
 import { generateReferralCode, reverseGeocode, updateShop, updateUser } from "@/lib/api";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
+import { ENDPOINTS } from "@/lib/endpoints";
 import {
   FiSun,
   FiMoon,
@@ -20,12 +21,13 @@ import {
   FiLoader,
   FiGlobe,
   FiPhone,
-  FiAlertCircle,
-  FiCheckCircle,
 } from "react-icons/fi";
 import { useTheme } from "next-themes";
 import { SidebarIcon } from "@/components/ui/SidebarIcon";
 import { useRouter } from "next/navigation";
+import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input, Textarea } from "@/components/ui/Input";
 
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
   let timer: number;
@@ -125,7 +127,7 @@ export default function SettingsPage() {
     debounce(async (query: string) => {
       if (!user?.id) return;
 
-      const { data } = await api.get("/maps/place", {
+      const { data } = await api.get(ENDPOINTS.MAPS.PLACE, {
         params: {
           id: user.id,
           query,
@@ -161,7 +163,7 @@ export default function SettingsPage() {
     setSuggestions([]);
 
     try {
-      const { data } = await api.get("/maps/geocode", {
+      const { data } = await api.get(ENDPOINTS.MAPS.GEOCODE, {
         params: { id: user?.id, address: baseAddress },
       });
       const loc = data?.results?.[0]?.geometry?.location;
@@ -359,7 +361,7 @@ export default function SettingsPage() {
     logout();
     router.push("/login");
   }
-  // Desktop Layout
+
   const renderDesktopLayout = () => (
     <>
       <div className="hidden md:block max-w-5xl py-6 px-4 sm:px-6">
@@ -371,7 +373,7 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           {/* Theme Toggle */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+          <Card className="p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
@@ -382,146 +384,116 @@ export default function SettingsPage() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">Light or dark mode</p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 aria-label={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
               >
-                {resolvedTheme === "light" ? <FiMoon className="w-5 h-5 text-gray-700 dark:text-gray-300" /> : <FiSun className="w-5 h-5 text-yellow-500" />}
-              </button>
+                {resolvedTheme === "light" ? <FiMoon className="w-5 h-5" /> : <FiSun className="w-5 h-5 text-yellow-500" />}
+              </Button>
             </div>
-          </div>
+          </Card>
 
           {/* Personal Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-6">
+          <Card>
+            <CardHeader className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <FiUser className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="font-medium text-gray-900 dark:text-white">Personal Information</h3>
-            </div>
+            </CardHeader>
 
-            <div className="space-y-4">
+            <CardBody className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition"
-                    placeholder="Your full name"
-                  />
-                </div>
+                <Input
+                  label="Full Name"
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Your full name"
+                />
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mobile Number</label>
                     <div className={`flex items-center gap-1 ${user.mobile_verified ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
                       {user.mobile_verified ? (
                         <>
-                          <SidebarIcon
-                            src="/assets/icons/ic_verified.svg"
-                            size={20}
-                            alt="Verified Icon"
-                          />
+                          <SidebarIcon src="/assets/icons/ic_verified.svg" size={20} alt="Verified" />
                           <span className="text-xs font-medium">Verified</span>
                         </>
                       ) : (
                         <>
-                          <SidebarIcon
-                            src="/assets/icons/ic_not_verified.svg"
-                            size={20}
-                            alt="Unverified Icon"
-                          />
+                          <SidebarIcon src="/assets/icons/ic_not_verified.svg" size={20} alt="Unverified" />
                           <span className="text-xs font-medium">Unverified</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg">
-                    <FiPhone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-700 dark:text-gray-300">{user.mobile_number}</span>
-                  </div>
+                  <Input
+                    value={user.mobile_number}
+                    disabled
+                    leftIcon={<FiPhone className="w-4 h-4" />}
+                    className="bg-gray-50 dark:bg-gray-700/50 cursor-not-allowed"
+                  />
                   {!user.mobile_verified && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
                       Mobile number verification required for full access
                     </p>
                   )}
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
                   <div className={`flex items-center gap-1 ${user.email_verified ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
                     {user.email_verified ? (
                       <>
-                        <SidebarIcon
-                          src="/assets/icons/ic_verified.svg"
-                          size={20}
-                          alt="Verified Icon"
-                        />
+                        <SidebarIcon src="/assets/icons/ic_verified.svg" size={20} alt="Verified" />
                         <span className="text-xs font-medium">Verified</span>
                       </>
                     ) : (
                       <>
-                        <SidebarIcon
-                          src="/assets/icons/ic_not_verified.svg"
-                          size={18}
-                          alt="Unverified Icon"
-                        />
+                        <SidebarIcon src="/assets/icons/ic_not_verified.svg" size={18} alt="Unverified" />
                         <span className="text-xs font-medium">Unverified</span>
                       </>
                     )}
                   </div>
                 </div>
-                <input
+                <Input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition"
                   placeholder="your.email@example.com"
+                  error={!user.email_verified ? "Please verify your email for important notifications" : undefined}
                 />
-                {!user.email_verified && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                    Please verify your email for important notifications
-                  </p>
-                )}
               </div>
-            </div>
-          </div>
+            </CardBody>
+          </Card>
 
           {/* Shop Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-6">
+          <Card>
+            <CardHeader className="flex items-center gap-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <FiHome className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="font-medium text-gray-900 dark:text-white">Shop Information</h3>
-            </div>
+            </CardHeader>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shop Address</label>
-              <div className="relative">
-                <div className="flex items-start gap-2">
-                  <div className="p-2 mt-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                    <SidebarIcon
-                      src="/assets/icons/ic_location.svg"
-                      size={22}
-                      alt="Location Icon"
-                    />
-                  </div>
-                  <textarea
-                    value={form.shop_address}
-                    onChange={handleAddressChange}
-                    placeholder="Start typing your shop address... (minimum 10 characters)"
-                    rows={3}
-                    className="flex-1 px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition resize-none"
-                  />
-                </div>
+            <CardBody>
+              <div className="space-y-2">
+                <Textarea
+                  label="Shop Address"
+                  value={form.shop_address}
+                  onChange={handleAddressChange}
+                  placeholder="Start typing your shop address... (minimum 10 characters)"
+                  rows={3}
+                  className="resize-none"
+                />
 
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {suggestions.map((item, i) => (
                       <div
                         key={i}
@@ -536,27 +508,27 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 )}
-              </div>
 
-              {lat !== null && lng !== null && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                  <FiCheck className="w-4 h-4" />
-                  <span>Location coordinates captured</span>
-                </div>
-              )}
-            </div>
-          </div>
+                {lat !== null && lng !== null && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                    <FiCheck className="w-4 h-4" />
+                    <span>Location coordinates captured</span>
+                  </div>
+                )}
+              </div>
+            </CardBody>
+          </Card>
 
           {/* Referral Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="mb-6">
+          <Card>
+            <CardHeader>
               <h3 className="font-medium text-gray-900 dark:text-white mb-1">Referral</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Invite friends and grow together
               </p>
-            </div>
+            </CardHeader>
 
-            <div className="space-y-4">
+            <CardBody className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Your Code</span>
@@ -585,22 +557,21 @@ export default function SettingsPage() {
 
                   {referralCode && (
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
+                      <Button
+                        variant="secondary"
                         onClick={copyCodeToClipboard}
-                        className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
                         title="Copy referral code"
                       >
                         {copySuccess ? <FiCheck className="w-5 h-5" /> : <FiCopy className="w-5 h-5" />}
-                      </button>
+                      </Button>
 
-                      <button
+                      <Button
                         onClick={handleNativeShare}
-                        className="p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
                         title="Share via WhatsApp, Telegram, Email..."
                         disabled={loadingReferralCode}
                       >
                         <FiShare2 className="w-5 h-5" />
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -611,31 +582,31 @@ export default function SettingsPage() {
                   Tap share icon to send via WhatsApp, Telegram, Email, etc.
                 </p>
               )}
-            </div>
-          </div>
+            </CardBody>
+          </Card>
 
           {/* Support */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <FiMail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <FiMail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">Support</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Need help? Contact our support team</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-white">Support</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Need help? Contact our support team</p>
-              </div>
-            </div>
 
-            <a
-              href="https://mail.google.com/mail/?view=cm&fs=1&to=support@thendralbooking.com&su=Help%20Needed%20from%20Dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              <FiMail className="w-4 h-4" />
-              Contact Support
-            </a>
-          </div>
+              <Button
+                variant="secondary"
+                leftIcon={<FiMail className="w-4 h-4" />}
+                onClick={() => window.open("https://mail.google.com/mail/?view=cm&fs=1&to=support@thendralbooking.com&su=Help%20Needed%20from%20Dashboard", "_blank")}
+              >
+                Contact Support
+              </Button>
+            </CardBody>
+          </Card>
 
           {/* Save Button */}
           <div className="sticky bottom-4 z-10">
@@ -647,26 +618,16 @@ export default function SettingsPage() {
                     {hasChanges ? "You have unsaved changes" : "All changes saved"}
                   </p>
                 </div>
-                <button
+                <Button
                   onClick={handleSave}
-                  disabled={!hasChanges || loading}
-                  className={`px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 min-w-[120px] ${!hasChanges || loading
-                    ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                    }`}
+                  disabled={!hasChanges}
+                  loading={loading}
+                  variant="success"
+                  leftIcon={<FiSave className="w-4 h-4" />}
+                  className="min-w-[120px]"
                 >
-                  {loading ? (
-                    <>
-                      <FiLoader className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <FiSave className="w-4 h-4" />
-                      Save
-                    </>
-                  )}
-                </button>
+                  Save
+                </Button>
               </div>
             </div>
           </div>

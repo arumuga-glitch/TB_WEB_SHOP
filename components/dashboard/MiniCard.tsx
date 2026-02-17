@@ -1,22 +1,17 @@
 "use client";
 import { SidebarIcon } from "../ui/SidebarIcon";
-import { useRouter } from "next/navigation";
 interface MiniCardProps {
   title: string;
   value: number;
   icon: {
     default: string;
   };
-  status: "upcoming" | "active" | "applied" | "completed" | "rejected";
 }
 
-export function MiniCard({ title, value, icon, status }: MiniCardProps) {
-  const router = useRouter();
-  const handleClick = () => {
-    router.push(`/my-requests?status =${status}`)
-  }
+export function MiniCard({ title, value, icon }: MiniCardProps) {
+
   return (
-    <div className="p-4 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition" onClick={handleClick}>
+    <div className="p-4 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition">
       {/* Mobile Layout */}
       <div className="flex flex-col items-center text-center  sm:hidden p-4" >
         <SidebarIcon src={icon.default} size={40} alt={title} />

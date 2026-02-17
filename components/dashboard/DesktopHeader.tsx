@@ -1,7 +1,6 @@
 "use client";
 
 import { useUIStore } from "@/store/ui.store";
-import { Notifications } from "./Notification";
 import { UserProfile } from "./UserProfile";
 export interface HeaderUserData {
   name: string;
@@ -21,8 +20,6 @@ interface DesktopHeaderProps {
 }
 
 export function DesktopHeader({
-  showNotifications,
-  toggleNotifications,
   isOnline,
   toggleOnlineStatus,
   toggleLoading,

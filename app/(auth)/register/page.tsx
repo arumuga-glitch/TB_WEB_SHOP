@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { registerUserAndShop } from "@/lib/auth";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
+import { ENDPOINTS } from "@/lib/endpoints";
 
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
   let timer: number;
@@ -47,7 +48,7 @@ export default function RegisterPage() {
         return;
       }
       try {
-        const res = await fetch("/api/referral/validate", {
+        const res = await fetch(ENDPOINTS.NEXT_API.REFERRAL_VALIDATE, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ referral_code: code.trim() }),
@@ -92,7 +93,7 @@ export default function RegisterPage() {
         return;
       }
       try {
-        const { data } = await api.get("/maps/place", {
+        const { data } = await api.get(ENDPOINTS.MAPS.PLACE, {
           params: {
             id: verifyId,
             query,
@@ -133,7 +134,7 @@ export default function RegisterPage() {
     setShowSuggestions(false);
     setSuggestions([]);
     try {
-      const { data } = await api.get("/maps/geocode", {
+      const { data } = await api.get(ENDPOINTS.MAPS.GEOCODE, {
         params: {
           id: verifyId,
           address: baseAddress,

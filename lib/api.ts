@@ -1,23 +1,16 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
 import { ShopData } from "@/store/shopStore";
-import { NewsResponse} from "@/types/news";
+import { NewsResponse } from "@/types/news";
+import { ENDPOINTS, AUTH_FREE_ROUTES } from "@/lib/endpoints";
 
 
 export interface ReferralResponse {
-  success:string;
-  message:string;
-  data:string;
+  success: string;
+  message: string;
+  data: string;
 }
 
-const AUTH_FREE_ROUTES = [
-  "/auth/send-otp",
-  "/auth/register-send-otp",
-  "/auth/verify-otp",
-  "/auth/register-verify-otp",
-  "/auth/refresh-token",
-  "/auth/register-user-shop",
-];
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -39,7 +32,7 @@ api.interceptors.request.use((config) => {
   );
 
   if (!isAuthFree) {
-    const token = useAuthStore.getState().accessToken; 
+    const token = useAuthStore.getState().accessToken;
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -79,7 +72,7 @@ api.interceptors.response.use(
       try {
         console.warn("🔄 Refreshing access token...");
 
-        const res = await api.post("/auth/refresh-token");
+        const res = await api.post(ENDPOINTS.AUTH.REFRESH_TOKEN);
         const newToken = res.data.data.accessToken;
 
         const store = useAuthStore.getState();
@@ -113,14 +106,16 @@ api.interceptors.response.use(
 
 export default api;
 
+// Settings Page Enpoints
+
 export const updateUserProfile = async (userId: string, data: { name?: string; email_id?: string }) => {
-  const res = await api.put(`/user/update/${userId}`, data);
+  const res = await api.put(ENDPOINTS.USER.UPDATE(userId), data);
   return res.data;
 };
 
 
 export async function generateReferralCode(): Promise<string> {
-  const { data: response } = await api.post<ReferralResponse>("/referral/generate-code", {
+  const { data: response } = await api.post<ReferralResponse>(ENDPOINTS.REFERRAL.GENERATE_CODE, {
     referrer_type: "SHOP",
   });
 
@@ -133,7 +128,7 @@ export async function generateReferralCode(): Promise<string> {
 }
 
 export const validateReferralCode = async (code: string) => {
-  const { data } = await api.post("/referral/validate", {
+  const { data } = await api.post(ENDPOINTS.REFERRAL.VALIDATE, {
     referral_code: code,
   });
   return data;
@@ -143,7 +138,7 @@ export const validateReferralCode = async (code: string) => {
 // Shop
 
 export const getShopByUser = async (userId: string): Promise<ShopData> => {
-  const { data } = await api.get(`/shop/by-user/${userId}`);
+  const { data } = await api.get(ENDPOINTS.SHOP.BY_USER(userId));
 
   if (!data?.success) {
     throw new Error(data?.message || "Failed to fetch shop details");
@@ -176,7 +171,7 @@ export const toggleShopOnline = async (
   payload: { is_online: boolean }
 ) => {
   const { data } = await api.put(
-    `/shop/online/${shopId}`,
+    ENDPOINTS.SHOP.TOGGLE_ONLINE(shopId),
     payload
   );
   return data;
@@ -185,12 +180,12 @@ export const toggleShopOnline = async (
 
 
 export const updateShop = async (shopId: string, payload: any) => {
-  const { data } = await api.put(`/shop/update/${shopId}`, payload);
+  const { data } = await api.put(ENDPOINTS.SHOP.UPDATE(shopId), payload);
   return data;
 };
 
 export const updateUser = async (userId: string, payload: { name: string; email_id: string }) => {
-  const { data } = await api.put(`/user/update/${userId}`, payload);
+  const { data } = await api.put(ENDPOINTS.USER.UPDATE(userId), payload);
   return data;
 };
 
@@ -206,7 +201,7 @@ export const getPlaceAutocomplete = async (
       ? `${query.trim()} ${city}` // 👈 CITY BIAS
       : query.trim();
 
-    const { data } = await api.get("/maps/place", {
+    const { data } = await api.get(ENDPOINTS.MAPS.PLACE, {
       params: {
         query: finalQuery,
         session_token: sessionToken, // 👈 REQUIRED
@@ -223,7 +218,7 @@ export const getPlaceAutocomplete = async (
 
 export const getPlaceDetails = async (placeId: string) => {
   try {
-    const { data } = await api.get("/maps/place", {
+    const { data } = await api.get(ENDPOINTS.MAPS.PLACE, {
       params: { id: placeId },
     });
     return data;
@@ -233,10 +228,10 @@ export const getPlaceDetails = async (placeId: string) => {
   }
 };
 
-export const reverseGeocode = async (id:string,lat: number, lng: number) => {
+export const reverseGeocode = async (id: string, lat: number, lng: number) => {
   try {
-    const { data } = await api.get("/maps/geocode", {
-      params: { id,latlng: `${lat},${lng}` },
+    const { data } = await api.get(ENDPOINTS.MAPS.GEOCODE, {
+      params: { id, latlng: `${lat},${lng}` },
     });
     return data;
   } catch (error: any) {
@@ -249,7 +244,7 @@ export const reverseGeocode = async (id:string,lat: number, lng: number) => {
 
 export const dashboardend = async (shopId: string) => {
   try {
-    const { data } = await api.get(`/service-request/shop/dashboard/${shopId}`);
+    const { data } = await api.get(ENDPOINTS.SERVICE_REQUEST.DASHBOARD(shopId));
     return data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to fetch dashboard details");
@@ -260,7 +255,7 @@ export const dashboardend = async (shopId: string) => {
 // News
 
 export const getNewsList = async (): Promise<NewsResponse> => {
-  const { data } = await api.get("/news/list");
+  const { data } = await api.get(ENDPOINTS.NEWS.LIST);
   if (!data?.success) {
     throw new Error(data?.message || "Failed to fetch news list");
   }
@@ -269,39 +264,26 @@ export const getNewsList = async (): Promise<NewsResponse> => {
 
 
 
-// Define types for clarity
-export interface Scheme {
-  id: string;
-  name: string;
-  name_i18n: string; // JSON string, you may want to parse this
-  created_at: string;
-  created_by: { id: string; name: string };
-  updated_at: string;
-  updated_by: { id: string; name: string };
-  active: boolean;
-}
+export const uploadServiceAgreement = async (
+  shopId: string,
+  file: File
+) => {
+  const formData = new FormData();
+  formData.append("service_agreement", file);
 
-export interface SchemeMeta {
-  totalItems: number;
-  itemCount: number;
-  itemsPerPage: number;
-  totalPages: number;
-  currentPage: number;
-}
+  const { data } = await api.post(
+    ENDPOINTS.SHOP.UPLOAD_SERVICE_AGREEMENT(shopId),
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
-export interface SchemeResponse {
-  success: boolean;
-  message: string;
-  data: {
-    meta: SchemeMeta;
-    items: Scheme[];
-  };
-}
-
-export const getSchemeList = async (): Promise<SchemeResponse> => {
-  const { data } = await api.get("/scheme/list");
   if (!data?.success) {
-    throw new Error(data?.message || "Failed to fetch scheme list");
+    throw new Error(data?.message || "Failed to upload agreement");
   }
+
   return data;
 };

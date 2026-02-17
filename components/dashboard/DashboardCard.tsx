@@ -29,8 +29,6 @@ export function DashboardCard({
           </div>
         </div>
       </div>
-
-      {/* ✅ DESKTOP VERSION (unchanged layout) */}
       <div className="hidden sm:flex p-6 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-600 shadow-sm flex-col hover:bg-gray-50 dark:hover:bg-gray-800 transition mt-10">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
           {title}

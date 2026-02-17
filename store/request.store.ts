@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
+import { ENDPOINTS } from '@/lib/endpoints';
 import { RawServiceRequest, ServiceRequest, TimelineEvent } from '@/types/myrequest';
 
 const mapTimelineStatus = (log: string): TimelineEvent['status'] => {
@@ -16,7 +17,7 @@ export const mapToUI = (item: RawServiceRequest): ServiceRequest => {
         id: item.id,
         customerName: item.user_data.name,
         customerPhone: item.user_data.mobile_number,
-        serviceName:item.service_data.service.name,
+        serviceName: item.service_data.service.name,
         serviceType: item.service_data.service_type!.name,
         serviceDetails: item.service_data.service.description.replace(/<[^>]*>/g, ''),
         location: item.service_data.address,
@@ -149,7 +150,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         if (showLoader) set({ loading: true });
 
         try {
-            const res = await api.get('/service-request/list', {
+            const res = await api.get(ENDPOINTS.SERVICE_REQUEST.LIST, {
                 params: { page: 1, limit: 1000 },
             });
 
@@ -199,7 +200,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         }));
 
         try {
-            await api.post('/service-request/accept', { request_id: requestId, shop_id: shopId });
+            await api.post(ENDPOINTS.SERVICE_REQUEST.ACCEPT, { request_id: requestId, shop_id: shopId });
         } catch (err: any) {
             console.error('Accept failed:', err);
             set({ requests: originalRequests });
@@ -228,7 +229,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         }));
 
         try {
-            await api.post('/service-request/reject', { request_id: requestId, shop_id: shopId, reason });
+            await api.post(ENDPOINTS.SERVICE_REQUEST.REJECT, { request_id: requestId, shop_id: shopId, reason });
         } catch (err: any) {
             set({ requests: originalRequests });
             throw err;
@@ -255,7 +256,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         }));
 
         try {
-            await api.put('/service-request/shop/status-update', payload);
+            await api.put(ENDPOINTS.SERVICE_REQUEST.STATUS_UPDATE, payload);
         } catch (err: any) {
             console.error('[updateStatus] failed:', err);
             set({ requests: originalRequests });
@@ -268,7 +269,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         const originalRequests = get().requests;
 
         try {
-            await api.put('/service-request/shop/payment', payload);
+            await api.put(ENDPOINTS.SERVICE_REQUEST.PAYMENT, payload);
             get().updateLocalRequest(request_id, (req) => ({
                 ...req,
                 payment_status: 'paid',
@@ -292,7 +293,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
 
     updatePriceDetails: async (payload) => {
         try {
-            await api.patch('/service-request/shop/price-details', payload);
+            await api.patch(ENDPOINTS.SERVICE_REQUEST.PRICE_DETAILS, payload);
         } catch (err: any) {
             console.error('updatePriceDetails failed:', err);
             throw err;

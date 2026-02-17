@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+
   useEffect(() => {
     if (!shop?.id) return;
 
@@ -117,28 +118,23 @@ export default function DashboardPage() {
             title="Upcoming"
             value={stats?.status_counts.pending ?? 0}
             icon={{ default: "/assets/images/img_upcoming.svg" }}
-            status="upcoming"
           />
           <MiniCard
             title="Processing"
             value={stats?.status_counts.active ?? 0}
             icon={{ default: "/assets/images/img_in_progress.svg" }}
-            status="active"
           />
           <MiniCard
             title="Applied"
             value={stats?.status_counts.applied ?? 0}
             icon={{ default: "/assets/images/img_processing.svg" }}
-            status="applied"
           />
           <MiniCard
             title="Completed"
             value={stats?.status_counts.completed ?? 0}
             icon={{ default: "/assets/images/img_done.svg" }}
-            status="completed"
           />
         </div>
-
       </div>
     </div>
   );
