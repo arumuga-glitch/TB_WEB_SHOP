@@ -2,6 +2,7 @@
 
 import { useUIStore } from "@/store/ui.store";
 import { UserProfile } from "./UserProfile";
+import { Notifications } from "./Notification";
 export interface HeaderUserData {
   name: string;
   avatarInitial: string;
@@ -20,6 +21,8 @@ interface DesktopHeaderProps {
 }
 
 export function DesktopHeader({
+  showNotifications,
+  toggleNotifications,
   isOnline,
   toggleOnlineStatus,
   toggleLoading,
@@ -50,10 +53,10 @@ export function DesktopHeader({
 
         {/* Right: notifications + profile */}
         <div className="flex items-center gap-6">
-          {/* <Notifications
+          <Notifications
             showNotifications={showNotifications}
             toggleNotifications={toggleNotifications}
-          /> */}
+          />
 
           <UserProfile
             isOnline={isOnline}

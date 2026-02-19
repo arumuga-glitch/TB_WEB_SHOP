@@ -28,7 +28,6 @@ export default function StatusFilterBar({
     rejected: requests.filter((r) => r.status === "rejected").length,
   };
 
-  // "Upcoming" tab shows count of upcoming + pending
   const upcomingGroupCount = statusCounts.upcoming + statusCounts.pending;
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export default function StatusFilterBar({
     <div>
       <div className="mb-4">
 
-        {/* 🔹 MOBILE VERSION */}
+        {/*  MOBILE VERSION */}
         <div className="md:hidden space-y-3">
 
           {/* Top Group */}
@@ -56,7 +55,7 @@ export default function StatusFilterBar({
               <button
                 key={status}
                 onClick={() => {
-                  setFilterStatus(status as any);
+                  setFilterStatus(status as ServiceRequest["status"]);
                   setCurrentPage(1);
                 }}
                 className={`flex-1 py-2 text-sm font-medium rounded-xl transition ${filterStatus === status
@@ -77,7 +76,7 @@ export default function StatusFilterBar({
               <button
                 key={status}
                 onClick={() => {
-                  setFilterStatus(status as any);
+                  setFilterStatus(status as ServiceRequest["status"]);
                   setCurrentPage(1);
                 }}
                 className={`flex-1 py-2 text-sm font-medium rounded-xl transition ${filterStatus === status

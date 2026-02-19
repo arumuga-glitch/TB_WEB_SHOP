@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useShopStore } from '@/store/shopStore';
 
 import { DesktopSidebar } from '@/components/dashboard/DesktopSidebar';
-import { DesktopHeader } from '@/components/dashboard/DesktopHeader';
+import { DesktopHeader, HeaderUserData } from '@/components/dashboard/DesktopHeader';
 import { MobileHeader } from '@/components/dashboard/MobileHeader';
 import { MobileBottomNav } from '@/components/dashboard/MobileBottomNav';
 import DisclaimerDialog from '@/components/dashboard/Disclaimer';
@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { shop, fetchShopByUser, toggleOnline, toggleLoading } = useShopStore();
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<HeaderUserData | null>(null);
 
   const [hydrated, setHydrated] = useState(false);
   const [shopLoaded, setShopLoaded] = useState(false);
@@ -35,16 +35,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const toggleNotifications = () => setShowNotifications((v) => !v);
 
-  // ------------------------------
-  // Hydration check
-  // ------------------------------
   useEffect(() => {
     setHydrated(true);
   }, []);
 
-  // ------------------------------
-  // Auth guard
-  // ------------------------------
   useEffect(() => {
     if (!hydrated) return;
 
@@ -53,9 +47,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [hydrated, accessToken, router]);
 
-  // ------------------------------
-  // Fetch shop once
-  // ------------------------------
   useEffect(() => {
     if (!user?.id || shopLoaded) return;
 
@@ -63,9 +54,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setShopLoaded(true);
   }, [user?.id, shopLoaded, fetchShopByUser]);
 
-  // ------------------------------
-  // Step 1 → Disclaimer Check
-  // ------------------------------
   useEffect(() => {
     if (!hydrated) return;
 
@@ -83,15 +71,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setShowDisclaimer(false);
   };
 
-  // ------------------------------
-  // Step 2 → Agreement Check (after disclaimer)
-  // ------------------------------
-useEffect(() => {
-  if (!disclaimerChecked) return;
-  if (showDisclaimer) return;
-  if (!shop) return;
-  setShowAgreement(false); 
-}, [disclaimerChecked, showDisclaimer, shop]);
+  useEffect(() => {
+    if (!disclaimerChecked) return;
+    if (showDisclaimer) return;
+    if (!shop) return;
+    setShowAgreement(false);
+  }, [disclaimerChecked, showDisclaimer, shop]);
 
 
   useEffect(() => {
@@ -106,9 +91,6 @@ useEffect(() => {
     });
   }, [user, shop]);
 
-  // ------------------------------
-  // Prevent rendering until ready
-  // ------------------------------
   if (!accessToken || !hydrated) return null;
 
   if (showDisclaimer) {
@@ -125,9 +107,6 @@ useEffect(() => {
 
   if (!shop) return null;
 
-  // ------------------------------
-  // Render Dashboard
-  // ------------------------------
   return (
     <div className="min-h-screen bg-slate-50 sm:bg-white dark:bg-gray-900/95">
 

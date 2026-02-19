@@ -115,7 +115,6 @@ export default function TermsPage() {
   )
 }
 
-/* ---------- Reusable Components ---------- */
 
 function Section({
   title,

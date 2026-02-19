@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import {FiLogOut} from "react-icons/fi";
-// import { FaNewspaper } from "react-icons/fa";
+import { FiLogOut } from "react-icons/fi";
 import { SidebarIcon } from "../ui/SidebarIcon";
 
 interface NavigationItem {
@@ -64,7 +63,7 @@ export function DesktopSidebar({ handleLogout }: DesktopSidebarProps) {
       <div className="p-6 h-full flex flex-col">
         {/* Logo */}
         <div className="flex items-center justify-left mb-8">
-          <img
+          <SidebarIcon
             alt="Thendral Booking"
             width={180}
             height={60}
@@ -91,7 +90,7 @@ export function DesktopSidebar({ handleLogout }: DesktopSidebarProps) {
                   src={item.icon.default}
                   activeSrc={item.icon.active}
                   isActive={isActive}
-                  size={25}              
+                  size={25}
                   alt={item.label}
                   className="dark:brightness-250"
                 />

@@ -108,12 +108,6 @@ export default api;
 
 // Settings Page Enpoints
 
-export const updateUserProfile = async (userId: string, data: { name?: string; email_id?: string }) => {
-  const res = await api.put(ENDPOINTS.USER.UPDATE(userId), data);
-  return res.data;
-};
-
-
 export async function generateReferralCode(): Promise<string> {
   const { data: response } = await api.post<ReferralResponse>(ENDPOINTS.REFERRAL.GENERATE_CODE, {
     referrer_type: "SHOP",
@@ -127,13 +121,12 @@ export async function generateReferralCode(): Promise<string> {
   return response.data;
 }
 
-export const validateReferralCode = async (code: string) => {
+export async function validateReferralCode(code: string): Promise<{ valid: boolean; message?: string }> {
   const { data } = await api.post(ENDPOINTS.REFERRAL.VALIDATE, {
-    referral_code: code,
+    referral_code: code.trim(),
   });
   return data;
-};
-
+}
 
 // Shop
 
@@ -191,43 +184,6 @@ export const updateUser = async (userId: string, payload: { name: string; email_
 
 // Maps
 
-export const getPlaceAutocomplete = async (
-  query: string,
-  sessionToken: string,
-  city?: string
-) => {
-  try {
-    const finalQuery = city
-      ? `${query.trim()} ${city}` // 👈 CITY BIAS
-      : query.trim();
-
-    const { data } = await api.get(ENDPOINTS.MAPS.PLACE, {
-      params: {
-        query: finalQuery,
-        session_token: sessionToken, // 👈 REQUIRED
-      },
-    });
-
-    return data;
-  } catch (error: any) {
-    console.error("Autocomplete error:", error);
-    throw new Error(error.response?.data?.message || "Failed to fetch suggestions");
-  }
-};
-
-
-export const getPlaceDetails = async (placeId: string) => {
-  try {
-    const { data } = await api.get(ENDPOINTS.MAPS.PLACE, {
-      params: { id: placeId },
-    });
-    return data;
-  } catch (error: any) {
-    console.error("Place details error:", error);
-    throw new Error(error.response?.data?.message || "Failed to fetch place details");
-  }
-};
-
 export const reverseGeocode = async (id: string, lat: number, lng: number) => {
   try {
     const { data } = await api.get(ENDPOINTS.MAPS.GEOCODE, {
@@ -242,7 +198,7 @@ export const reverseGeocode = async (id: string, lat: number, lng: number) => {
 
 // Dashboard API
 
-export const dashboardend = async (shopId: string) => {
+export const getDashboardStats = async (shopId: string) => {
   try {
     const { data } = await api.get(ENDPOINTS.SERVICE_REQUEST.DASHBOARD(shopId));
     return data;

@@ -68,8 +68,6 @@ export const useShopStore = create<ShopStore>((set, get) => ({
     if (!shop || toggleLoading) return;
 
     const previousStatus = shop.is_online;
-
-    // 1. Lock + optimistic UI update
     set({
       toggleLoading: true,
       shop: { ...shop, is_online: nextStatus },
@@ -80,13 +78,10 @@ export const useShopStore = create<ShopStore>((set, get) => ({
       const response = await toggleShopOnline(shop.id, {
         is_online: nextStatus,
       });
-
-      // 2. Confirm with server value (defensive)
       set({
         shop: { ...shop, is_online: response.is_online ?? nextStatus },
       });
     } catch (err: any) {
-      // 3. Rollback + show error
       set({
         shop: { ...shop, is_online: previousStatus },
         error: err.message || "Failed to update online status",
@@ -106,7 +101,6 @@ export const useShopStore = create<ShopStore>((set, get) => ({
       longitude: shop.longitude,
     };
 
-    // optimistic
     set({
       shop: { ...shop, address, latitude, longitude },
     });

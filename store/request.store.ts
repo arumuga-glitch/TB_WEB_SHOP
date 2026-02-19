@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
 import { ENDPOINTS } from '@/lib/endpoints';
-import { RawServiceRequest, ServiceRequest, TimelineEvent } from '@/types/myrequest';
+import { RawServiceRequest, RequestStatus, ServiceRequest, TimelineEvent } from '@/types/myrequest';
 
 const mapTimelineStatus = (log: string): TimelineEvent['status'] => {
     if (log.toLowerCase().includes('completed')) return 'success';
@@ -116,7 +116,6 @@ interface ServiceRequestStore {
         note?: string;
     }) => Promise<void>;
 
-    // Helper to update single request locally
     updateLocalRequest: (requestId: string, updater: (req: ServiceRequest) => ServiceRequest) => void;
 }
 
@@ -131,7 +130,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
 
         const interval = setInterval(() => {
             get().fetchRequests(false);
-        }, 300000);
+        }, 60000); // Poll every 60 seconds for faster updates
 
         set({ pollingInterval: interval });
     },
@@ -164,7 +163,6 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
     },
 
 
-    // Selector helpers
     upcoming: () => get().requests.filter((r) => r.status === 'upcoming'),
     applied: () => get().requests.filter((r) => r.status === 'applied'),
     processing: () => get().requests.filter((r) => r.status === 'active'),
@@ -183,10 +181,9 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
     accept: async (requestId, shopId) => {
         const originalRequests = get().requests;
 
-        // Optimistic update
         get().updateLocalRequest(requestId, (req) => ({
             ...req,
-            status: 'active' as any, // or 'pending' depending on your flow
+            status: 'active',
             timeline: [
                 ...(req.timeline || []),
                 {
@@ -241,7 +238,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         const originalRequests = get().requests;
         get().updateLocalRequest(request_id, (req) => ({
             ...req,
-            status: status as any,
+            status: status as RequestStatus,
             timeline: [
                 ...(req.timeline || []),
                 {

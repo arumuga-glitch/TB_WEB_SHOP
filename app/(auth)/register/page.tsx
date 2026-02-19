@@ -3,8 +3,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { registerUserAndShop } from "@/lib/auth";
-import api from "@/lib/api";
+import api, { validateReferralCode } from "@/lib/api";
 import toast from "react-hot-toast";
+import { SidebarIcon } from "@/components/ui/SidebarIcon";
 import { ENDPOINTS } from "@/lib/endpoints";
 
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
@@ -39,7 +40,14 @@ export default function RegisterPage() {
   const [referralValid, setReferralValid] = useState<boolean | null>(null);
   const [referralError, setReferralError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  /* ───────────────────── Referral Validation ───────────────────── */
+
+  useEffect(() => {
+    if (!mobileFromOtp) {
+      toast.error("Access denied. Please login first.");
+      router.replace("/login");
+    }
+  }, [mobileFromOtp, router]);
+
   const validateReferral = useCallback(
     debounce(async (code: string) => {
       if (!code.trim()) {
@@ -48,13 +56,8 @@ export default function RegisterPage() {
         return;
       }
       try {
-        const res = await fetch(ENDPOINTS.NEXT_API.REFERRAL_VALIDATE, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ referral_code: code.trim() }),
-        });
-        const data = await res.json();
-        if (res.ok && data.valid) {
+        const data = await validateReferralCode(code);
+        if (data.valid) {
           setReferralValid(true);
           setReferralError("");
           toast.success("Referral code applied!");
@@ -84,6 +87,7 @@ export default function RegisterPage() {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
+
   /* ───────────────────── Address Autocomplete (DEBOUNCED) ───────────────────── */
   const fetchAutocomplete = useCallback(
     debounce(async (query: string) => {
@@ -111,6 +115,8 @@ export default function RegisterPage() {
     }, 500),
     [verifyId, sessionToken]
   );
+
+
   const handleAddressChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setForm(prev => ({ ...prev, shop_address: value }));
@@ -123,6 +129,7 @@ export default function RegisterPage() {
     }
     fetchAutocomplete(value.trim());
   };
+
   /* ───────────────────── Select Suggestion ───────────────────── */
   const selectSuggestion = async (item: any) => {
     const businessName = form.shop_name.trim();
@@ -215,26 +222,23 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="md:hidden sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6">
         <div className="flex items-center justify-center">
-          <img
+          <SidebarIcon
             alt="Thendral Booking"
-            width="140"
-            height="40"
-            decoding="async"
+            width={140}
+            height={40}
             className="h-10 w-auto"
             src="/logo.svg"
           />
         </div>
       </div>
-      {/* Main Content */}
       <div className="lg:flex lg:items-center lg:justify-center lg:min-h-[calc(100vh-64px)] lg:py-8">
         <div className="w-full lg:max-w-4xl xl:max-w-5xl">
           {/* Desktop Header */}
           <div className="hidden lg:block text-center mb-8">
-            <img
+            <SidebarIcon
               alt="Thendral Booking"
-              width="180"
-              height="60"
-              decoding="async"
+              width={180}
+              height={60}
               className="h-16 mx-auto mb-4"
               src="/logo.svg"
             />
@@ -391,7 +395,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
               </div>
-              {/* Submit Button */}
               <div className="pt-2 lg:pt-4">
                 <button
                   type="submit"

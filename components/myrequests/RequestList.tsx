@@ -38,10 +38,8 @@ export default function RequestList({
   const [isMobile, setIsMobile] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  // 🔥 Mobile starts with 3 items
   const [visibleCount, setVisibleCount] = useState(3);
 
-  /* -------------------- Screen Size Detection -------------------- */
   useEffect(() => {
     const checkScreen = () => {
       setIsMobile(window.innerWidth < 640);
@@ -52,7 +50,6 @@ export default function RequestList({
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
-  /* -------------------- Disable pagination on mobile -------------------- */
   useEffect(() => {
     if (isMobile) {
       setItemsPerPage(filteredRequestsLength);
@@ -60,14 +57,12 @@ export default function RequestList({
     }
   }, [isMobile, filteredRequestsLength, setItemsPerPage, setCurrentPage]);
 
-  /* -------------------- Reset visible count on data change -------------------- */
   useEffect(() => {
     if (isMobile) {
       setVisibleCount(3);
     }
   }, [currentRequests, isMobile]);
 
-  /* -------------------- Infinite Scroll (Mobile Only) -------------------- */
   useEffect(() => {
     if (!isMobile || !loadMoreRef.current) return;
 
@@ -99,7 +94,6 @@ export default function RequestList({
     };
   }, [isMobile, visibleCount, currentRequests.length]);
 
-  /* -------------------- Loading State -------------------- */
   if (loading) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-12 text-center">
@@ -148,7 +142,6 @@ export default function RequestList({
               ))}
             </div>
 
-            {/* 🔥 Infinite Scroll Loader */}
             {isMobile && visibleCount < currentRequests.length && (
               <div
                 ref={loadMoreRef}
@@ -167,7 +160,6 @@ export default function RequestList({
         )}
       </div>
 
-      {/* -------------------- Desktop Pagination -------------------- */}
       {!isMobile && totalPages > 1 && (
         <PaginationControls
           currentPage={currentPage}

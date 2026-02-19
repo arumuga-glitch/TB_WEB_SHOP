@@ -1,4 +1,3 @@
-// components/my-requests/RequestCard.tsx
 "use client";
 
 import { FiCalendar } from "react-icons/fi";
@@ -60,15 +59,6 @@ export default function RequestCard({
                                 </p>
                             </div>
                         </div>
-
-                        <div className="text-blue-600 text-lg">
-                            <SidebarIcon
-                                src="/assets/icons/ic_call.svg"
-                                size={22}
-                                alt="phone"
-                                className="fill-blue-300"
-                            />
-                        </div>
                     </div>
 
                     {/* Service */}
@@ -101,7 +91,6 @@ export default function RequestCard({
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                     } transition-all cursor-pointer`}
                 onClick={(e) => {
-                    // Only select if clicking the card itself — not the buttons inside
                     if ((e.target as HTMLElement).closest('button')) return;
                     onSelect();
                 }}
@@ -128,7 +117,7 @@ export default function RequestCard({
 
                     {/* Service Details */}
                     <div>
-                         <p className="text-gray-900  dark:text-white mb-2">
+                        <p className="text-gray-900  dark:text-white mb-2">
                             {request.serviceName}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-100 line-clamp-2">
@@ -142,7 +131,6 @@ export default function RequestCard({
                         <span>{displayDateTime()}</span>
                     </div>
 
-                    {/* Bottom row: Accept/Reject OR View Details */}
                     {/* Bottom row */}
                     {stage === "upcoming" && request.status === "upcoming" && (
                         <div className="flex justify-between items-center mt-1">

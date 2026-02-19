@@ -207,10 +207,8 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
     }
     else if (request.status === "applied") {
       if (!paymentCollected) {
-        // FIRST STEP → collect cash
         handlePayment();
       } else {
-        // SECOND STEP → mark completed
         setShowCompleteConfirm(true);
       }
     }
@@ -654,7 +652,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
   // Mobile layout 
   const renderMobileLayout = () => (
     <div className="fixed inset-0 z-[50] bottom-16 md:hidden">
-      {/* Overlay */}
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
       {/* Bottom Sheet */}
@@ -751,7 +748,7 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
                           </div>
                         </div>
                       ) : (
-                        
+
                         <div className="flex justify-between items-center py-1">
                           <div className="flex items-center gap-2 flex-1">
                             {canEdit && item.id && (
@@ -942,7 +939,7 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
 
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
 
-  const isModal = useUIStore((s)=>s.isModalOpen)
+  const isModal = useUIStore((s) => s.isModalOpen)
 
   // Render
   return (
@@ -956,7 +953,7 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
 
       {/* Mobile bottom sheet */}
       {!isDesktop && (
-        <div className={`md:hidden ${isModal?"hidden":""}`}>
+        <div className={`md:hidden ${isModal ? "hidden" : ""}`}>
           {renderMobileLayout()}
         </div>
       )}

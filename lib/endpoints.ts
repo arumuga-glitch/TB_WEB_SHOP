@@ -43,14 +43,12 @@ export const ENDPOINTS = {
     NEWS: {
         LIST: "/news/list",
     },
-
-    // Next.js Local API Routes (Proxies)
     NEXT_API: {
         REFERRAL_VALIDATE: "/api/referral/validate",
     },
 } as const;
 
-// Auth-free routes (used by the interceptor to skip auth headers)
+// Auth-free routes
 export const AUTH_FREE_ROUTES = [
     ENDPOINTS.AUTH.SEND_OTP,
     ENDPOINTS.AUTH.REGISTER_SEND_OTP,

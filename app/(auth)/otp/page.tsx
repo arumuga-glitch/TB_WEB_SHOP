@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { verifyOtpSmart, sendOtp } from "@/lib/auth";
 import { FiRefreshCw } from "react-icons/fi";
 import { useAuthStore } from "@/store/authStore";
+import { SidebarIcon } from "@/components/ui/SidebarIcon";
 import toast from "react-hot-toast";
 
 export default function OtpPage() {
@@ -12,7 +13,7 @@ export default function OtpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [mobile, setMobile] = useState("");
-  const [timer, setTimer] = useState(120); // 2 minutes in seconds
+  const [timer, setTimer] = useState(120);
   const [canResend, setCanResend] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
 
@@ -28,7 +29,7 @@ export default function OtpPage() {
   useEffect(() => {
     const mobileParam = searchParams.get("mobile");
     const newUserParam = searchParams.get("new");
-    const sentParam = searchParams.get("sent"); // add this flag when redirecting from login
+    const sentParam = searchParams.get("sent");
 
     if (!mobileParam) {
       toast.error("Mobile number is required");
@@ -43,7 +44,6 @@ export default function OtpPage() {
 
     console.log(`[OTP Page init] isNewUser from URL = ${detectedNewUser}`);
 
-    // ✅ Only show toast if redirected with ?sent=1
     if (sentParam === "1" && !hasShownToast.current) {
       toast.success(`OTP sent to ${formatMobileNumber(mobileParam)}`);
       hasShownToast.current = true;
@@ -126,7 +126,7 @@ export default function OtpPage() {
       if (isNewUser) {
         toast.success("OTP verified! Please complete your registration.");
         const verifyId = result.id;
-        if(!verifyId){
+        if (!verifyId) {
           throw new Error("No verification id")
         }
         router.replace(`/register?mobile=${mobile}&id=${verifyId}`);
@@ -200,9 +200,11 @@ export default function OtpPage() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <img
+          <SidebarIcon
             src="/logo.svg"
             alt="Thendral Booking"
+            height={64}
+            width={192}
             className="h-16 mx-auto mb-4"
           />
 
@@ -249,8 +251,6 @@ export default function OtpPage() {
               />
             ))}
           </div>
-
-          {/* Removed timer display from here */}
         </div>
 
         {/* Verify Button */}
@@ -266,7 +266,6 @@ export default function OtpPage() {
           {isLoading ? "Verifying..." : "Verify OTP"}
         </button>
 
-        {/* Resend OTP / Timer Section */}
         <div className="text-center mb-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Didn't get OTP?{" "}

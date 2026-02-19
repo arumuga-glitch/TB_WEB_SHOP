@@ -8,7 +8,7 @@ import { FiX } from "react-icons/fi";
 interface Props {
   open: boolean;
   onCancel: () => void;
-  onClose:()=>void;
+  onClose: () => void;
   onConfirm: (refId: string) => Promise<void>;
   title?: string;
   placeholder?: string;
@@ -24,7 +24,7 @@ export function ReferenceIdModal({
   showCloseButton = true,
 }: Props) {
   const [refId, setRefId] = useState("");
- const { openModal, closeModal } = useUIStore();
+  const { openModal, closeModal } = useUIStore();
 
   useEffect(() => {
     if (open) openModal();
@@ -44,7 +44,7 @@ export function ReferenceIdModal({
       await onConfirm(refId.trim());
       toast.success("Reference added successfully");
       setRefId("");
-      onCancel(); // close modal after success
+      onCancel();
     } catch (err) {
       toast.error("Something went wrong");
     }
@@ -55,7 +55,7 @@ export function ReferenceIdModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center md:p-4 modal"> 
+    <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center md:p-4 modal">
 
       <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-sm animate-in fade-in zoom-in-95 duration-200 ">
 

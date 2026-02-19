@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { sendOtp } from "@/lib/auth";
 import { FaWhatsapp } from "react-icons/fa";
+import { SidebarIcon } from "@/components/ui/SidebarIcon";
 
 export default function LoginPage() {
     const [mobile, setMobile] = useState("");
@@ -32,8 +33,6 @@ export default function LoginPage() {
         setError("");
         try {
             const { isNewUser } = await sendOtp(mobile);
-
-            // Pass the real value from backend detection
             const query = new URLSearchParams({
                 mobile,
                 new: isNewUser ? "1" : "0",
@@ -60,11 +59,10 @@ export default function LoginPage() {
                 <div className="text-center mb-10">
                     <div className="flex items-center justify-center mb-4">
                         <a href="/" className="flex items-center">
-                            <img
+                            <SidebarIcon
                                 alt="Thendral Booking"
-                                width="180"
-                                height="60"
-                                decoding="async"
+                                width={180}
+                                height={60}
                                 className="h-20 w-auto"
                                 src="/logo.svg"
                             />

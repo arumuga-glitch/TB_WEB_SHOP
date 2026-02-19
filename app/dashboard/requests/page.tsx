@@ -27,7 +27,6 @@ export default function MyRequestsPage() {
 
   const pollingStarted = useRef(false);
   useEffect(() => {
-    // Only start once when page becomes active
     if (!pollingStarted.current) {
       fetchRequests();
       startPolling();
@@ -139,15 +138,10 @@ export default function MyRequestsPage() {
     }
 
     if (selectedId === id) {
-      // Optional: deselect on second click
-      // setSelectedId(null);
-      // setShowDetails(false);
       return;
     }
 
     setSelectedId(id);
-
-    // Desktop: always show sidebar
     if (window.innerWidth >= 1024) {
       setShowDetails(true);
     }
@@ -158,20 +152,17 @@ export default function MyRequestsPage() {
     setShowDetails(false);
   };
 
-  // Handle click outside to close details on mobile
-  // Handle click outside to close details on desktop
+
   useEffect(() => {
     // Only run on desktop
     if (window.innerWidth < 1024) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-
-      // Ignore if clicking inside details, any card, or any modal
       if (
         target.closest('.request-details-sidebar') ||
         target.closest('.request-card') ||
-        target.closest('.modal')  // NEW: Ignore clicks inside modals to prevent premature sidebar close
+        target.closest('.modal')
       ) {
         return;
       }
@@ -236,7 +227,7 @@ export default function MyRequestsPage() {
         {selectedRequest && showDetails && (
           <RequestDetailsPage
             request={selectedRequest}
-            setShowDetails={handleCloseDetails} 
+            setShowDetails={handleCloseDetails}
           />
         )}
       </div>

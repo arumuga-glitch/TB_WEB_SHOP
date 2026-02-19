@@ -1,4 +1,3 @@
-// components/my-requests/SearchBar.tsx
 "use client";
 
 import { FiSearch, FiX } from "react-icons/fi";

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { MiniCard } from "@/components/dashboard/MiniCard";
 import { useShopStore } from "@/store/shopStore";
-import { dashboardend } from "@/lib/api";
+import { getDashboardStats } from "@/lib/api";
 
 interface DashboardStats {
   status_counts: {
@@ -29,7 +29,7 @@ export default function DashboardPage() {
     const fetchDashboard = async () => {
       setStatsLoading(true);
       try {
-        const res = await dashboardend(shop.id);
+        const res = await getDashboardStats(shop.id);
         setStats(res.data);
       } catch (err) {
         console.error("Dashboard fetch failed:", err);
@@ -93,7 +93,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ✅ DESKTOP VERSION (unchanged) */}
+        {/* Desktop View */}
         <div className="hidden sm:grid grid-cols-2 gap-4 mb-6 ">
           <DashboardCard
             title="Wallet Balance"

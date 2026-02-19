@@ -25,7 +25,7 @@ export function MiniCard({ title, value, icon }: MiniCardProps) {
         </p>
       </div>
 
-      {/* Desktop Layout (unchanged) */}
+      {/* Desktop Layout */}
       <div className="hidden sm:flex flex-col">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 sm:mb-8">
           {title}

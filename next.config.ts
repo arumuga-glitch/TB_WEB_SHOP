@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Explicitly allow your LAN/dev origin
   allowedDevOrigins: [
     "https://192.168.1.50:3001",
   ],

@@ -39,11 +39,10 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
 
       setAuth: (user, access) => {
-        // 🔐 Encrypt token and store separately
+        // Encrypt token and store separately
         const encrypted = encrypt(access);
         localStorage.setItem("access_token", encrypted);
 
-        // ✅ Keep plain token only in memory
         set({
           user,
           accessToken: access,
@@ -63,8 +62,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-
-      // 🚫 Do NOT persist accessToken (prevents duplication & leaks)
       partialize: (state) => ({
         user: state.user,
       }),

@@ -47,7 +47,7 @@ export default function VerifyOTPModal({
   return (
 
     <>
-      <div className="min-h-screen hidden md:flex fixed inset-0 z-[9999] bg-black/40 items-center justify-center modal">  
+      <div className="min-h-screen hidden md:flex fixed inset-0 z-[9999] bg-black/40 items-center justify-center modal">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-sm">
           <h3 className="text-lg font-semibold mb-4">
             Verify OTP
@@ -79,7 +79,6 @@ export default function VerifyOTPModal({
 
       {/* mobile version */}
       <div className="fixed inset-0 z-[9999] bottom-16  sm:hidden modal">  {/* ADDED: modal class */}
-        {/* Overlay */}
         <div
           className="absolute inset-0 bg-black/40"
           onClick={onCancel}

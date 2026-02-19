@@ -58,9 +58,8 @@ export default function SettingsPage() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // theme
   const { resolvedTheme, setTheme } = useTheme();
-  // Referral
+
   const [referralCode, setReferralCode] = useState<string>("");
   const [loadingReferralCode, setLoadingReferralCode] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -236,12 +235,9 @@ export default function SettingsPage() {
     );
   };
 
-
-
-  // ────────────────────────────────────────────────
-  // Updated referral link format
-  // ────────────────────────────────────────────────
-  const referralLink = referralCode ? `https://thendralbooking.com/r/${referralCode}` : "";
+  const referralLink = referralCode
+    ? `${process.env.NEXT_PUBLIC_REFERRAL_URL}/${referralCode}`
+    : "";
 
   const referralMessage = referralCode
     ? `Join me on Thendral Booking! Use my referral code: ${referralCode}\nOr click this link: ${referralLink}`
@@ -649,7 +645,6 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 flex items-center justify-between bg-gradient-to-r from-blue-0 to-blue-100 dark:to-blue-900">
 
             <div className="flex items-center gap-4">
-              {/* Avatar */}
               <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xl font-bold dark:text-white ">
                 {form.name
                   ?.split(" ")
@@ -810,7 +805,6 @@ export default function SettingsPage() {
 
           <div className="space-y-5">
 
-            {/* Name */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                 Name
@@ -826,8 +820,6 @@ export default function SettingsPage() {
         focus:outline-none focus:ring-2 focus:ring-blue-600"
               />
             </div>
-
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                 Email Id
@@ -844,7 +836,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Shop Address */}
             <div className="relative">
 
               <label className=" flex  justify-between text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
@@ -889,7 +880,6 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Submit Button */}
             <button
               onClick={async () => {
                 await handleSave();

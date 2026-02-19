@@ -28,7 +28,6 @@ export default function AgreementDialog({ onAccept }: AgreementDialogProps) {
     const generatedDate = `${day}-${month}-${year}`;
 
 
-    // Intro content
     const introContent = `
 This Service Agreement ('Agreement') is entered into between the Platform and the Service Provider, upon digital acceptance or signature, and shall govern all transactions thereafter.
 
@@ -37,8 +36,6 @@ Parties:
 • Service Provider: ${shopName}, hereinafter referred to as "Service Provider"
 • Effective Date: ${effectiveDate}
   `;
-
-    // Full terms (your existing content – unchanged)
     const termsContent = `
 1. Purpose of Agreement
 To define the scope of arrangement between the Platform and the Service Provider to deliver government-related services (e.g., Aadhaar, Voter ID, TNReginet, etc.) to Users who book appointments or visit the Service Provider through the Platform.
@@ -114,7 +111,7 @@ Nothing in this Agreement shall be deemed to create a partnership, joint venture
 For matters not specifically addressed in this Agreement, the principles of general interpretation under Indian contract law shall apply.
   `;
 
-    // Signature pad logic (unchanged)
+    // Signature pad logic 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -209,7 +206,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
             let y = margin + 10;
             let pageNum = 1;
 
-            // Helper function to check and add new page
             const checkAndAddPage = (neededSpace: number) => {
                 if (y + neededSpace > pageHeight - margin) {
                     pdf.addPage();
@@ -259,7 +255,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
 
             y += 5;
 
-            // Process terms content (exactly as shown in web)
             const termsLines = termsContent.split('\n');
 
             for (const line of termsLines) {
@@ -270,7 +265,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
 
                 checkAndAddPage(8);
 
-                // Numbered sections (e.g., "1. Purpose of Agreement")
                 if (/^\d+\.\s/.test(line.trim())) {
                     pdf.setFontSize(14);
                     pdf.setFont("helvetica", "bold");
@@ -278,7 +272,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                     pdf.text(line.trim(), margin, y);
                     y += 8;
                 }
-                // Lettered subsections (e.g., "a) Platform:", "b) Service Provider:")
                 else if (/^[a-z]\)\s/.test(line.trim())) {
                     pdf.setFontSize(11);
                     pdf.setFont("helvetica", "bold");
@@ -286,7 +279,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                     pdf.text(line.trim(), margin + 4, y);
                     y += 6;
                 }
-                // Bullet points
                 else if (line.trim().startsWith('•')) {
                     pdf.setFontSize(11);
                     pdf.setFont("helvetica", "normal");
@@ -305,7 +297,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                         y += 5;
                     }
                 }
-                // Regular text (including "Govt Fee:", "Platform Charge:", etc.)
                 else {
                     pdf.setFontSize(11);
                     pdf.setFont("helvetica", "normal");
@@ -319,12 +310,11 @@ For matters not specifically addressed in this Agreement, the principles of gene
                 }
             }
 
-            // Signature Section (matches web display)
             checkAndAddPage(60);
 
             pdf.setFontSize(14);
             pdf.setFont("helvetica", "bold");
-            pdf.setTextColor(0, 191, 255); // sky-500 color
+            pdf.setTextColor(0, 191, 255);
             pdf.text("Digital Signature", margin, y);
             y += 10;
 
@@ -341,27 +331,25 @@ For matters not specifically addressed in this Agreement, the principles of gene
             const sigHeight =
                 (canvasRef.current.height / canvasRef.current.width) * sigWidth;
 
-            const extra = 5; // how much corner extends
+            const extra = 5;
 
             // Add signature image
             pdf.addImage(sigData, "PNG", margin, y, sigWidth, sigHeight);
 
-            // Set border style
             pdf.setDrawColor(0);
             pdf.setLineWidth(0.3);
 
-            // Bottom extended line
             pdf.line(
-                margin - extra,                
-                y + sigHeight + extra,          
-                margin + sigWidth + extra,      
+                margin - extra,
+                y + sigHeight + extra,
+                margin + sigWidth + extra,
                 y + sigHeight + extra
             );
 
-           
+
             pdf.line(
-                margin + sigWidth + extra,      
-                y - extra,                     
+                margin + sigWidth + extra,
+                y - extra,
                 margin + sigWidth + extra,
                 y + sigHeight + extra
             );
@@ -394,7 +382,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
             await uploadServiceAgreement(shop.id, file);
             toast.success("Service agreement generated & uploaded");
 
-            // Optional: download for preview
             pdf.save(`service-agreement-${shop.id}.pdf`);
 
             setShop({ ...shop, service_agreement: "signed" });
@@ -409,11 +396,9 @@ For matters not specifically addressed in this Agreement, the principles of gene
     };
     if (!user || !shop) return null;
 
-    // Function to format terms content with blue headings and proper list styling
     const formatTermsContent = (content: string) => {
         const lines = content.split('\n');
         return lines.map((line, index) => {
-            // Check if line is a numbered section (e.g., "1. Purpose of Agreement")
             if (/^\d+\.\s/.test(line)) {
                 return (
                     <div key={index} className="mt-4 first:mt-0">
@@ -421,7 +406,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                     </div>
                 );
             }
-            // Check if line is a lettered subsection (e.g., "a) Platform:", "b) Service Provider:")
             else if (/^[a-z]\)\s/.test(line)) {
                 return (
                     <div key={index} className="ml-4 mt-2 font-semibold">
@@ -429,7 +413,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                     </div>
                 );
             }
-            // Check if line contains bullet points
             else if (line.trim().startsWith('•')) {
                 return (
                     <ul key={index} className="list-disc ml-8 mt-1 text-gray-700 dark:text-gray-300">
@@ -437,7 +420,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                     </ul>
                 );
             }
-            // Regular text
             else if (line.trim() !== '') {
                 return (
                     <p key={index} className="ml-4 mt-1 text-gray-700 dark:text-gray-300">
@@ -445,7 +427,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                     </p>
                 );
             }
-            // Empty line
             else {
                 return <div key={index} className="h-2"></div>;
             }
@@ -456,7 +437,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800 max-w-4xl w-full max-h-[90vh] flex flex-col">
 
-                {/* Scrollable content */}
                 <div className="flex-1 overflow-y-auto p-6 sm:p-10">
                     <div ref={contentRef}>
                         {/* Service Agreement Section */}
@@ -519,7 +499,6 @@ For matters not specifically addressed in this Agreement, the principles of gene
                                     </label>
                                 </div>
 
-                                {/* Status indicator */}
                                 <div className="mt-4 flex justify-center items-center text-sm">
                                     <span className={isSigned ? "bg-blue-100 text-sky-500 rounded-full px-3 py-1 font-medium" : "text-gray-500"}>
                                         {isSigned ? "✓ Signature captured" : "Signature required"}
