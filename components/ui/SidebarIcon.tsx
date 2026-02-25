@@ -10,6 +10,8 @@ export interface SidebarIconProps {
   height?: number;
   alt: string;
   className?: string;
+  priority?: boolean;
+  loading?: "lazy" | "eager";
 }
 
 export function SidebarIcon({
@@ -21,14 +23,22 @@ export function SidebarIcon({
   height,
   alt,
   className,
+  priority,
+  loading,
 }: SidebarIconProps) {
+  const w = width || size;
+  const h = height || size;
+
   return (
     <Image
       src={isActive && activeSrc ? activeSrc : src}
       alt={alt}
-      width={width || size}
-      height={height || size}
+      width={w}
+      height={h}
       className={clsx("shrink-0", className)}
+      priority={priority}
+      loading={loading}
+      style={{ width: `${w}px`, height: `${h}px` }}
     />
   );
 }

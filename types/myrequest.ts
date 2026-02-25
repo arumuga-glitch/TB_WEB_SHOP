@@ -33,20 +33,20 @@ export interface TimelineEvent {
   status: 'success' | 'warning' | 'info' | 'error';
 }
 
-export type PriceCategory ='service' | 'additional';
+export type PriceCategory = 'service' | 'additional';
 export interface PriceItem {
   id: string;
   label: string;
   amount: number;
   category: PriceCategory;
   isAdditional?: boolean;
-  isMandatory?: boolean; 
+  isMandatory?: boolean;
   isCustom?: boolean;
 }
 
 export interface ServiceType {
-  id:string;
-  name:string;
+  id: string;
+  name: string;
 }
 
 
@@ -54,7 +54,7 @@ export interface ServiceRequest {
   id: string;
   customerName: string;
   customerPhone: string;
-  serviceName:string;
+  serviceName: string;
   serviceType: string;
   serviceDetails: string;
   location: string;
@@ -69,10 +69,10 @@ export interface ServiceRequest {
   timeline?: TimelineEvent[];
   priceDetails: PriceItem[];
   otp?: string;
-  referenceNumber?:string;
+  referenceNumber?: string;
   notes?: string[];
   rejectionReason?: string;
-  payment_status:RawServiceRequest['payment_status'];
+  payment_status: RawServiceRequest['payment_status'];
 }
 
 export interface RawServiceRequest {
@@ -105,12 +105,12 @@ export interface RawServiceRequest {
       name: string;
       description: string;
       total_price: number;
-      service_fee?:number;
+      service_fee?: number;
       service_fees?: RawServiceFee[];
       additional_price?: number;
     };
-    service_fee?:RawServiceFee[];
-    service_type?:ServiceType;
+    service_fee?: RawServiceFee[];
+    service_type?: ServiceType;
   };
 
   logs?: RawLog[];
@@ -124,7 +124,7 @@ export interface RawServiceFee {
   price?: number;
   is_mandatory?: boolean;
   active?: boolean;
-  type?:'system' |'custom';
+  type?: 'system' | 'custom';
 }
 
 export interface RawLog {

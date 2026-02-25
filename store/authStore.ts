@@ -1,6 +1,12 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { encrypt } from "@/lib/crypto";
+import { persist, createJSONStorage, StateStorage } from "zustand/middleware";
+import { encrypt, decrypt } from "@/lib/crypto";
+
+export interface UserRole {
+  id: string;
+  name: string;
+  active: boolean;
+}
 
 export interface User {
   id: string;
@@ -18,12 +24,6 @@ export interface User {
   active: boolean;
 }
 
-export interface UserRole {
-  id: string;
-  name: string;
-  active: boolean;
-}
-
 interface AuthState {
   user: User | null;
   accessToken: string | null;
@@ -32,6 +32,30 @@ interface AuthState {
   logout: () => void;
 }
 
+/**
+ * 🔒 CUSTOM ENCRYPTED STORAGE
+ * This ensures that even the 'auth-storage' key in localStorage
+ * is encrypted and unreadable to prying eyes.
+ */
+const encryptedStorage: StateStorage = {
+  getItem: (name: string): string | null => {
+    const encryptedValue = localStorage.getItem(name);
+    if (!encryptedValue) return null;
+    try {
+      return decrypt(encryptedValue);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name: string, value: string): void => {
+    const encryptedValue = encrypt(value);
+    localStorage.setItem(name, encryptedValue);
+  },
+  removeItem: (name: string): void => {
+    localStorage.removeItem(name);
+  },
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -39,10 +63,6 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
 
       setAuth: (user, access) => {
-        // Encrypt token and store separately
-        const encrypted = encrypt(access);
-        localStorage.setItem("access_token", encrypted);
-
         set({
           user,
           accessToken: access,
@@ -50,9 +70,6 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // 🧹 Clear encrypted token
-        localStorage.removeItem("access_token");
-
         set({
           user: null,
           accessToken: null,
@@ -61,9 +78,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => encryptedStorage),
       partialize: (state) => ({
         user: state.user,
+        accessToken: state.accessToken,
       }),
     }
   )

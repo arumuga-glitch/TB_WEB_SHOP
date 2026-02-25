@@ -65,10 +65,12 @@ export function DesktopSidebar({ handleLogout }: DesktopSidebarProps) {
         <div className="flex items-center justify-left mb-8">
           <SidebarIcon
             alt="Thendral Booking"
-            width={180}
-            height={60}
+            width={160}
+            height={48}
             className="h-12 w-auto"
             src="/logo.svg"
+            priority={true}
+            loading="eager"
           />
         </div>
 

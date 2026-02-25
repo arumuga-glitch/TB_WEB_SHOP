@@ -29,19 +29,19 @@ export function DashboardCard({
           </div>
         </div>
       </div>
-      <div className="hidden sm:flex p-6 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-600 shadow-sm flex-col hover:bg-gray-50 dark:hover:bg-gray-800 transition mt-10">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+      <div className="hidden sm:flex p-5 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-gray-600 shadow-sm flex-col hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {title}
         </p>
 
         <div className="flex justify-between items-end">
           <SidebarIcon
             src={icon.default}
-            size={48}
+            size={40}
             alt={title}
             className="dark:invert"
           />
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+          <p className="text-xl font-bold text-gray-900 dark:text-white">
             {value}
           </p>
         </div>

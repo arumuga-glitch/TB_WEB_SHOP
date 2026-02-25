@@ -5,39 +5,40 @@
 /* Define your theme variables – light mode default */
 :root {
   --background: #ffffff;
-  --foreground: #171717;           
+  --foreground: #171717;
   --card: #ffffff;
-  --card-foreground: #111827;      
-  --muted: #f3f4f6;                
-  --muted-foreground: #6b7280;     
-  --border: #e5e7eb;               
+  --card-foreground: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #10b981;                 
+  --ring: #10b981;
   --primary: #10b981;
   --primary-foreground: #ffffff;
 }
 
 /* Dark mode overrides */
 .dark {
-  --background: #0a0a0a;           
-  --foreground: #ededed;           
-  --card: #1f2937;                 
-  --card-foreground: #f3f4f6;      
-  --muted: #374151;                
-  --muted-foreground: #9ca3af;     
-  --border: #374151;               
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #1f2937;
+  --card-foreground: #f3f4f6;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --border: #374151;
   --input: #374151;
-  --ring: #34d399;                 
+  --ring: #34d399;
 }
 
 
-html, body {
+html,
+body {
   background: var(--background);
   color: var(--foreground);
 }
 
 body {
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-inter), Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -50,6 +51,7 @@ body {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -59,4 +61,32 @@ body {
   animation: slide-up 0.3s ease-out;
 }
 
+/* ── MQTT new-request alert animations ── */
+@keyframes gentle-pulse {
 
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes ring-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  75%,
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.animate-ping {
+  animation: ring-ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}

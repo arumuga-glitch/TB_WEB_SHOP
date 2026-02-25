@@ -20,6 +20,8 @@ const api = axios.create({
 
 let isRefreshing = false;
 let queue: ((token: string | null) => void)[] = [];
+let refreshRetryCount = 0;
+const MAX_REFRESH_RETRIES = 2;
 
 const resolveQueue = (token: string | null) => {
   queue.forEach(cb => cb(token));
@@ -46,16 +48,31 @@ api.interceptors.request.use((config) => {
 
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Reset retry count on any successful response
+    if (!AUTH_FREE_ROUTES.some(route => res.config.url?.includes(route))) {
+      refreshRetryCount = 0;
+    }
+    return res;
+  },
   async (error) => {
     const original = error.config;
 
+    // Handle 401 Unauthorized
     if (
       error.response?.status === 401 &&
       !original?._retry &&
       !AUTH_FREE_ROUTES.some(route => original.url?.includes(route))
     ) {
+      if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
+        console.error("❌ Max token refresh retries reached. Logging out...");
+        useAuthStore.getState().logout();
+        if (typeof window !== "undefined") window.location.replace("/");
+        return Promise.reject(error);
+      }
+
       original._retry = true;
+      refreshRetryCount++;
 
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -73,31 +90,38 @@ api.interceptors.response.use(
         console.warn("🔄 Refreshing access token...");
 
         const res = await api.post(ENDPOINTS.AUTH.REFRESH_TOKEN);
-        const newToken = res.data.data.accessToken;
+
+        const body = res.data ?? {};
+        const payload = body.data ?? body;
+        const newToken = payload.access_token ?? payload.token ?? payload.accessToken;
+
+        if (!newToken) {
+          throw new Error("No access token returned from refresh endpoint");
+        }
 
         const store = useAuthStore.getState();
-        store.setAuth(store.user!, newToken);
+        if (store.user) {
+          store.setAuth(store.user, newToken);
+        }
 
         resolveQueue(newToken);
-
         original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
       } catch (refreshError) {
-        console.error("❌ Refresh token failed");
-
+        console.error("❌ Refresh token failed", refreshError);
         resolveQueue(null);
         useAuthStore.getState().logout();
-        window.location.replace("/");
-
+        if (typeof window !== "undefined") window.location.replace("/");
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
 
+    // Direct logout for other 401 scenarios (auth-free routes that somehow 401)
     if (error.response?.status === 401) {
       useAuthStore.getState().logout();
-      window.location.replace("/");
+      if (typeof window !== "undefined") window.location.replace("/");
     }
 
     return Promise.reject(error);

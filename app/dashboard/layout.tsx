@@ -11,6 +11,7 @@ import { MobileHeader } from '@/components/dashboard/MobileHeader';
 import { MobileBottomNav } from '@/components/dashboard/MobileBottomNav';
 import DisclaimerDialog from '@/components/dashboard/Disclaimer';
 import AgreementDialog from '@/components/dashboard/Agreement';
+import MqttRequestListener from '@/components/common/MqttRequestListener';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -48,11 +49,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [hydrated, accessToken, router]);
 
   useEffect(() => {
-    if (!user?.id || shopLoaded) return;
+    // 1. If no user or no token yet, don't fetch
+    if (!user?.id || !accessToken) return;
 
-    fetchShopByUser(user.id);
-    setShopLoaded(true);
-  }, [user?.id, shopLoaded, fetchShopByUser]);
+    // 2. Only fetch if we don't have a shop OR if the current shop belongs to a different user
+    // This prevents infinite loops if fetchShopByUser is called repeatedly
+    if (!shop || shop.user?.id !== user.id) {
+      if (shopLoaded) return; // Prevent multiple simultaneous attempts
+
+      console.log("🏪 Dashboard fetching shop for user:", user.id);
+      fetchShopByUser(user.id).finally(() => {
+        setShopLoaded(true);
+      });
+    } else {
+      setShopLoaded(true);
+    }
+  }, [user?.id, accessToken, shop, shopLoaded, fetchShopByUser]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -71,13 +83,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setShowDisclaimer(false);
   };
 
+  // Sequence logic: Disclaimer -> Agreement -> Dashboard
   useEffect(() => {
     if (!disclaimerChecked) return;
-    if (showDisclaimer) return;
-    if (!shop) return;
-    setShowAgreement(false);
-  }, [disclaimerChecked, showDisclaimer, shop]);
 
+    // 1. If disclaimer not accepted, don't show agreement yet
+    if (showDisclaimer) {
+      setShowAgreement(false);
+      return;
+    }
+
+    // 2. If disclaimer accepted, check if shop needs to sign agreement
+    if (shop && !shop.service_agreement) {
+      setShowAgreement(true);
+    } else {
+      setShowAgreement(false);
+    }
+  }, [disclaimerChecked, showDisclaimer, shop]);
 
   useEffect(() => {
     if (!user) return;
@@ -91,21 +113,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     });
   }, [user, shop]);
 
+
   if (!accessToken || !hydrated) return null;
 
+  // ─── STEP 1: Show Disclaimer ───
   if (showDisclaimer) {
     return (
       <DisclaimerDialog onAccept={handleAcceptDisclaimer} />
     );
   }
 
-  if (showAgreement) {
+  // ─── STEP 2: Show Agreement (only if not signed) ───
+  if (showAgreement && shop) {
     return (
       <AgreementDialog onAccept={() => setShowAgreement(false)} />
     );
   }
 
+  // ─── STEP 3: Show Dashboard ───
   if (!shop) return null;
+
 
   return (
     <div className="min-h-screen bg-slate-50 sm:bg-white dark:bg-gray-900/95">
@@ -128,10 +155,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       />
 
       <main className="lg:ml-64 min-h-screen bg-slate-50 dark:bg-gray-900 rounded-lg">
-        <div className="lg:mt-20 lg:p-8">{children}</div>
+        <div className="lg:mt-20 lg:p-8">
+          {shop ? children : (
+            <div className="flex items-center justify-center p-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+            </div>
+          )}
+        </div>
       </main>
 
       <MobileBottomNav />
+
+      {/* ── Real-time MQTT new-request listener & alert popup ── */}
+      {isOnline && <MqttRequestListener />}
     </div>
   );
 }
