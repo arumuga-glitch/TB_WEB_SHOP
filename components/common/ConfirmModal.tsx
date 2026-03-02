@@ -44,10 +44,10 @@ export default function ConfirmStatusModal({
     }
   }, [open, openModal, closeModal]);
 
-  if (!open) return null; 
+  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4 overscroll-none modal"> 
+    <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4 overscroll-none modal">
       {/* Desktop Version */}
       <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
 
@@ -104,7 +104,7 @@ export default function ConfirmStatusModal({
       </div>
 
       {/* Mobile Version */}
-      <div className="md:hidden absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl shadow-xl animate-slideUp">
+      <div className="md:hidden absolute bottom-16 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl shadow-xl animate-slideUp">
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <p className="text-center text-sm text-gray-600 dark:text-white px-2">

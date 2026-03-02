@@ -20,6 +20,24 @@ interface RequestListProps {
   setItemsPerPage: (count: number) => void;
 }
 
+function RequestSkeleton() {
+  return (
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse">
+      <div className="flex justify-between items-start mb-4">
+        <div className="space-y-2">
+          <div className="h-5 w-32 bg-slate-200 dark:bg-gray-700 rounded" />
+          <div className="h-4 w-20 bg-slate-100 dark:bg-gray-700/50 rounded" />
+        </div>
+        <div className="h-6 w-16 bg-slate-200 dark:bg-gray-700 rounded-full" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 w-full bg-slate-100 dark:bg-gray-700/50 rounded" />
+        <div className="h-4 w-2/3 bg-slate-100 dark:bg-gray-700/50 rounded" />
+      </div>
+    </div>
+  );
+}
+
 export default function RequestList({
   currentRequests,
   loading,
@@ -94,25 +112,20 @@ export default function RequestList({
     };
   }, [isMobile, visibleCount, currentRequests.length]);
 
-  if (loading) {
-    return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-12 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400 text-lg">
-          Loading your requests...
-        </p>
-      </div>
-    );
-  }
-
   const visibleRequests = isMobile
     ? currentRequests.slice(0, visibleCount)
     : currentRequests;
 
   return (
     <div className="space-y-6">
-      <div className="sm:bg-white dark:bg-gray-800 sm:rounded-xl sm:shadow-sm overflow-hidden sm:border sm:border-gray-200 dark:border-gray-700 sm:p-4">
-        {filteredRequestsLength === 0 ? (
+      <div className="sm:bg-white dark:bg-gray-800 sm:rounded-xl sm:shadow-sm overflow-hidden sm:border sm:border-gray-200 dark:border-gray-700 sm:p-4 min-h-[400px]">
+        {loading && currentRequests.length === 0 ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((n) => (
+              <RequestSkeleton key={n} />
+            ))}
+          </div>
+        ) : filteredRequestsLength === 0 ? (
           <div className="p-12 text-center">
             <div className="text-7xl text-gray-300 dark:text-gray-600 mb-5">
               📭
@@ -127,19 +140,23 @@ export default function RequestList({
         ) : (
           <>
             <div className="space-y-4 divide-y divide-gray-200 dark:divide-gray-700">
-              {visibleRequests.map((request) => (
-                <RequestCard
-                  key={request.id}
-                  request={request}
-                  isSelected={selectedId === request.id}
-                  onSelect={() => {
-                    setSelectedId(request.id);
-                    setShowDetails(true);
-                  }}
-                  onAccept={onAccept}
-                  onReject={onReject}
-                />
-              ))}
+              {visibleRequests
+                .filter((req, index, self) =>
+                  index === self.findIndex((r) => r.id === req.id)
+                )
+                .map((request) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    isSelected={selectedId === request.id}
+                    onSelect={() => {
+                      setSelectedId(request.id);
+                      setShowDetails(true);
+                    }}
+                    onAccept={onAccept}
+                    onReject={onReject}
+                  />
+                ))}
             </div>
 
             {isMobile && visibleCount < currentRequests.length && (

@@ -18,7 +18,7 @@ export const mapToUI = (item: RawServiceRequest): ServiceRequest => {
         customerName: item.user_data.name,
         customerPhone: item.user_data.mobile_number,
         serviceName: item.service_data.service.name,
-        serviceType: item.service_data.service_type!.name,
+        serviceType: item.service_data.service_type?.name ?? "General",
         serviceDetails: item.service_data.service.description.replace(/<[^>]*>/g, ''),
         location: item.service_data.address,
 
@@ -43,7 +43,7 @@ export const mapToUI = (item: RawServiceRequest): ServiceRequest => {
         })) ?? [],
 
         priceDetails: [
-            // 1️⃣ Service Fee (simple, direct)
+            // 1️⃣ Service Fee
             {
                 id: `${item.service_data.service.id}-service-fee`,
                 label: item.service_data.service.name,
@@ -79,7 +79,6 @@ interface ServiceRequestStore {
     stopPolling: () => void;
     pollingInterval: NodeJS.Timeout | null;
     fetchRequests: (showLoader?: boolean) => Promise<void>;
-
 
     upcoming: () => ServiceRequest[];
     applied: () => ServiceRequest[];
@@ -118,18 +117,75 @@ interface ServiceRequestStore {
 
     updateLocalRequest: (requestId: string, updater: (req: ServiceRequest) => ServiceRequest) => void;
     addRequest: (request: ServiceRequest) => void;
+    newRequestIds: Set<string>;
+    optimisticIds: Set<string>;
+    highlightedRequestId: string | null;
+    setHighlightedRequestId: (id: string | null) => void;
+    clearNewRequestId: (id: string) => void;
 }
+
+// Helper for robust deduplication across different sources (MQTT vs API)
+// Uses customerPhone+service (most reliable) or customerName+service (fallback).
+// Deliberately avoids date/time comparison since locale-formatted strings are brittle.
+const isConceptualDuplicate = (a: ServiceRequest, b: ServiceRequest): boolean => {
+    // 1. Exact ID match (cheapest check, do first)
+    if (a.id === b.id) return true;
+
+    // 2. Phone + service name — most reliable unique combo
+    if (
+        a.customerPhone &&
+        b.customerPhone &&
+        a.customerPhone === b.customerPhone &&
+        a.serviceName === b.serviceName
+    ) return true;
+
+    // 3. Name + service name fallback (when phone is missing)
+    if (
+        a.customerName === b.customerName &&
+        a.serviceName === b.serviceName &&
+        a.requestedDate === b.requestedDate  // same calendar date is enough
+    ) return true;
+
+    return false;
+};
 
 export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => ({
     loading: false,
     requests: [],
     pollingInterval: null,
+    newRequestIds: new Set(),
+    optimisticIds: new Set(),
+    highlightedRequestId: null,
 
     addRequest: (request) => {
         set((state) => {
-            // Check for duplicates to avoid double-adding if API refresh happens simultaneously
-            if (state.requests.some(r => r.id === request.id)) return state;
-            return { requests: [request, ...state.requests] };
+            // Strict ID check ONLY — conceptual matching is too risky here because
+            // historical requests from the same customer/service would falsely match.
+            // Conceptual matching happens only in fetchRequests where we compare
+            // known-pending MQTT temp entries against fresh API results.
+            if (state.requests.some(r => r.id === request.id)) {
+                // Exact duplicate (e.g. MQTT delivered twice) — just re-trigger highlight
+                return { highlightedRequestId: request.id };
+            }
+
+            const newIds = new Set(state.newRequestIds);
+            newIds.add(request.id);
+
+            return {
+                requests: [request, ...state.requests],
+                newRequestIds: newIds,
+                highlightedRequestId: request.id
+            };
+        });
+    },
+
+    setHighlightedRequestId: (id) => set({ highlightedRequestId: id }),
+
+    clearNewRequestId: (id) => {
+        set((state) => {
+            const newIds = new Set(state.newRequestIds);
+            newIds.delete(id);
+            return { newRequestIds: newIds };
         });
     },
 
@@ -139,7 +195,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
 
         const interval = setInterval(() => {
             get().fetchRequests(false);
-        }, 60000); // Poll every 60 seconds for faster updates
+        }, 60000);
 
         set({ pollingInterval: interval });
     },
@@ -153,9 +209,10 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
     },
 
     fetchRequests: async (showLoader = true) => {
-        if (get().loading && showLoader) return;
+        const shouldShowLoader = showLoader && get().requests.length === 0;
 
-        if (showLoader) set({ loading: true });
+        if (get().loading && shouldShowLoader) return;
+        if (shouldShowLoader) set({ loading: true });
 
         try {
             const res = await api.get(ENDPOINTS.SERVICE_REQUEST.LIST, {
@@ -163,21 +220,70 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
             });
 
             const items: RawServiceRequest[] = res.data.data?.items || [];
-            set({ requests: items.map(mapToUI) });
+            const fetchedRequests = items.map(mapToUI);
+
+            set((state) => {
+                const pendingIds = new Set([...state.newRequestIds, ...state.optimisticIds]);
+                const existingPendingRequests = state.requests.filter(r => pendingIds.has(r.id));
+
+                const mergedRequests = [...fetchedRequests];
+                const newOptimisticIds = new Set(state.optimisticIds);
+                const newRequestIds = new Set(state.newRequestIds);
+                // Track which real API ID should be highlighted after the merge
+                let newHighlightId: string | null = null;
+
+                existingPendingRequests.forEach(pendingReq => {
+                    const matchIndex = mergedRequests.findIndex(r =>
+                        r.id === pendingReq.id || isConceptualDuplicate(r, pendingReq)
+                    );
+
+                    if (matchIndex === -1) {
+                        // Not on server yet — keep the in-memory (temp) entry at top
+                        mergedRequests.unshift(pendingReq);
+                    } else {
+                        const realId = mergedRequests[matchIndex].id;
+
+                        // Transfer "new" tracking from temp ID → real ID
+                        if (newRequestIds.has(pendingReq.id)) {
+                            newRequestIds.delete(pendingReq.id);
+                            newRequestIds.add(realId);
+                        }
+
+                        // ALWAYS re-highlight the real entry when a temp entry is merged.
+                        // This works even if the highlight timer already fired and cleared
+                        // newRequestIds/highlightedRequestId before fetchRequests ran.
+                        newHighlightId = realId;
+
+                        newOptimisticIds.delete(pendingReq.id);
+                    }
+                });
+
+                // Strict ID dedup — conceptual matching would risk merging distinct
+                // real API records (e.g. same customer, same service, different day).
+                const finalRequests = mergedRequests.filter((req, index, self) =>
+                    index === self.findIndex((r) => r.id === req.id)
+                );
+
+                return {
+                    requests: finalRequests,
+                    optimisticIds: newOptimisticIds,
+                    newRequestIds,
+                    // Use the newly computed highlight; fall back to existing if no merge happened
+                    highlightedRequestId: newHighlightId !== null ? newHighlightId : state.highlightedRequestId,
+                    loading: false
+                };
+            });
         } catch (err) {
             console.error('Failed to fetch requests:', err);
-        } finally {
-            if (showLoader) set({ loading: false });
+            set({ loading: false });
         }
     },
 
-
-    upcoming: () => get().requests.filter((r) => r.status === 'upcoming'),
+    upcoming: () => get().requests.filter((r) => r.status === 'upcoming' || r.status === 'pending'),
     applied: () => get().requests.filter((r) => r.status === 'applied'),
     processing: () => get().requests.filter((r) => r.status === 'active'),
     completed: () => get().requests.filter((r) => r.status === 'completed'),
     rejected: () => get().requests.filter((r) => r.status === 'rejected'),
-
 
     updateLocalRequest: (requestId: string, updater: (req: ServiceRequest) => ServiceRequest) => {
         set((state) => ({
@@ -192,7 +298,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
 
         get().updateLocalRequest(requestId, (req) => ({
             ...req,
-            status: 'active',
+            status: 'pending',
             timeline: [
                 ...(req.timeline || []),
                 {
@@ -206,10 +312,14 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         }));
 
         try {
+            set(state => ({ optimisticIds: new Set(state.optimisticIds).add(requestId) }));
             await api.post(ENDPOINTS.SERVICE_REQUEST.ACCEPT, { request_id: requestId, shop_id: shopId });
         } catch (err: any) {
-            console.error('Accept failed:', err);
-            set({ requests: originalRequests });
+            set(state => {
+                const newOptimistic = new Set(state.optimisticIds);
+                newOptimistic.delete(requestId);
+                return { requests: originalRequests, optimisticIds: newOptimistic };
+            });
             throw err;
         }
     },
@@ -217,7 +327,6 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
     reject: async (requestId, shopId, reason) => {
         const originalRequests = get().requests;
 
-        // Optimistic
         get().updateLocalRequest(requestId, (req) => ({
             ...req,
             status: 'rejected',
@@ -235,15 +344,20 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         }));
 
         try {
+            set(state => ({ optimisticIds: new Set(state.optimisticIds).add(requestId) }));
             await api.post(ENDPOINTS.SERVICE_REQUEST.REJECT, { request_id: requestId, shop_id: shopId, reason });
         } catch (err: any) {
-            set({ requests: originalRequests });
+            set(state => {
+                const newOptimistic = new Set(state.optimisticIds);
+                newOptimistic.delete(requestId);
+                return { requests: originalRequests, optimisticIds: newOptimistic };
+            });
             throw err;
         }
     },
 
     updateStatus: async (payload) => {
-        const { request_id, status, note, otp } = payload;
+        const { request_id, status, note } = payload;
         const originalRequests = get().requests;
         get().updateLocalRequest(request_id, (req) => ({
             ...req,
@@ -255,7 +369,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
                     timestamp: new Date().toISOString(),
                     title: `Status updated`,
                     description: `Changed to ${status}${note ? ` - ${note}` : ''}`,
-                    status: status === 'completed' || status === 'applied' ? 'success' : 'info',
+                    status: (status === 'completed' || status === 'applied') ? 'success' : 'info',
                 },
             ],
             ...(status === 'completed' && { paymentCollected: true }),
@@ -310,10 +424,7 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
 
 // MQTT Service
 export const mapMqttToUI = (rawItem: any): ServiceRequest => {
-    // 1. Normalize the entry point
     let data = rawItem;
-
-    // Handle stringified payloads
     if (typeof rawItem === 'string') {
         try {
             data = JSON.parse(rawItem);
@@ -322,25 +433,15 @@ export const mapMqttToUI = (rawItem: any): ServiceRequest => {
         }
     }
 
-    // Capture the internal data block (many systems wrap the actual request in 'request_data' or 'data')
     const innerData = data?.request_data ?? (data?.data ?? (data?.body ?? data));
-
-    if (process.env.NODE_ENV !== 'production') {
-        console.log("🚀 [MQTT STORE] Incoming Raw Payload:", data);
-        console.log("📦 [MQTT STORE] Extracted Inner Data:", innerData);
-    }
-
-    // 2. Standardize fields
     const date = data.timestamp ? new Date(data.timestamp) : (innerData.created_at ? new Date(innerData.created_at) : new Date());
 
-    // User Data Extraction
     const userData = {
         id: innerData.customer?.id ?? (innerData.customer_id ?? (innerData.user_id ?? "")),
         name: innerData.customer?.name ?? (innerData.customerName ?? (innerData.name ?? (innerData.user_name ?? "Unknown"))),
         mobile_number: innerData.customer?.mobile_number ?? (innerData.customerPhone ?? (innerData.mobile_number ?? ""))
     };
 
-    // Service Extraction
     const serviceRaw = innerData.service;
     const service = {
         id: serviceRaw?.id ?? (innerData.service_id ?? crypto.randomUUID()),
@@ -350,7 +451,6 @@ export const mapMqttToUI = (rawItem: any): ServiceRequest => {
         service_fee: Number(serviceRaw?.service_fee ?? (innerData.total_service_fee ?? (innerData.service_fee_amount ?? 0)))
     };
 
-    // Service Category/Type Extraction
     const serviceTypeRaw = innerData.service_type;
     const serviceType = {
         id: serviceTypeRaw?.id ?? "1",
@@ -371,12 +471,11 @@ export const mapMqttToUI = (rawItem: any): ServiceRequest => {
         mobile_number: ""
     };
 
-    if (process.env.NODE_ENV !== 'production') {
-        console.log("🎯 [MQTT STORE] Final Mapped Components:", { userData, service, serviceType, shopData });
-    }
+    const requestId = data.requestId || (innerData.id || (innerData.request_id || (data.id || `${service.id}-${date.getTime()}`)));
 
-    // 3. Map to final UI structure
-    const requestId = data.requestId || (innerData.id || (innerData.request_id || `${service.id}-${date.getTime()}`));
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`🎯 [MQTT MAPPED ID]: ${requestId}`);
+    }
 
     return {
         id: requestId,
@@ -408,7 +507,6 @@ export const mapMqttToUI = (rawItem: any): ServiceRequest => {
         })) ?? [],
 
         priceDetails: [
-            // 1️⃣ Service Fee
             {
                 id: `${service.id}-service-fee`,
                 label: service.name,
@@ -417,8 +515,6 @@ export const mapMqttToUI = (rawItem: any): ServiceRequest => {
                 isMandatory: true,
                 isCustom: false,
             },
-
-            // 2️⃣ Platform / additional fees
             ...(serviceData.service_fee ?? []).map((fee: any) => {
                 const isCustom = fee.is_mandatory === false && fee.active !== true;
                 return {

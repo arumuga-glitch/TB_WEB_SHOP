@@ -68,7 +68,7 @@ export function DesktopSidebar({ handleLogout }: DesktopSidebarProps) {
             width={160}
             height={48}
             className="h-12 w-auto"
-            src="/logo.svg"
+            src="/assets/images/img_logo_splash.png"
             priority={true}
             loading="eager"
           />

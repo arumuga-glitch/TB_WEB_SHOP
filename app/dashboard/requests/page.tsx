@@ -21,23 +21,30 @@ export default function MyRequestsPage() {
     reject,
     startPolling,
     stopPolling,
+    newRequestIds,
   } = useServiceRequestStore();
 
   const shopID = useShopStore((state) => state.shop?.id);
 
   const pollingStarted = useRef(false);
+  // Handle polling and initial fetch
   useEffect(() => {
-    if (!pollingStarted.current) {
-      fetchRequests();
-      startPolling();
-      pollingStarted.current = true;
+    if (requests.length === 0) {
+      // No data at all — show loader and fetch
+      fetchRequests(true);
+    } else if (newRequestIds.size === 0) {
+      // We have data but no pending MQTT entries — safe to background-refresh
+      fetchRequests(false);
     }
+    // If newRequestIds.size > 0, skip fetch to avoid race-condition duplicates.
+    // The polling interval will sync when MQTT entries are confirmed by the server.
+
+    startPolling();
 
     return () => {
       stopPolling();
-      pollingStarted.current = false;
     };
-  }, [fetchRequests, startPolling, stopPolling]);
+  }, []); // Only run once on mount
 
 
   const [filterStatus, setFilterStatus] = useState<
@@ -103,6 +110,8 @@ export default function MyRequestsPage() {
     try {
       await accept(requestId, shopID);
       toast.success("Request accepted. Now confirm to start processing.");
+      // Delay sync to let server commit the status change, then replace temp MQTT entry
+      setTimeout(() => fetchRequests(false), 1500);
     } catch (err) {
       toast.error("Failed to accept request");
       console.error(err);
@@ -124,6 +133,8 @@ export default function MyRequestsPage() {
     try {
       await reject(requestId, shopID, reason.trim());
       toast.success("Request rejected successfully");
+      // Delay sync to let server commit the status change, then replace temp MQTT entry
+      setTimeout(() => fetchRequests(false), 1500);
     } catch (err) {
       toast.error("Failed to reject request");
       console.error(err);

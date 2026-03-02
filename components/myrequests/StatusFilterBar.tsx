@@ -30,16 +30,8 @@ export default function StatusFilterBar({
 
   const upcomingGroupCount = statusCounts.upcoming + statusCounts.pending;
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isMobile = window.innerWidth < 768;
-
-      if (isMobile && filterStatus === "all") {
-        setFilterStatus("upcoming");
-        setCurrentPage(1);
-      }
-    }
-  }, []);
+  // Removed the forced setFilterStatus on mount as it causes redundant re-renders.
+  // We handle the default filter state in the parent component more efficiently.
 
 
   return (

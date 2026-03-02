@@ -61,7 +61,6 @@ body {
   animation: slide-up 0.3s ease-out;
 }
 
-/* ── MQTT new-request alert animations ── */
 @keyframes gentle-pulse {
 
   0%,
@@ -88,5 +87,28 @@ body {
 }
 
 .animate-ping {
-  animation: ring-ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: ring-ping 0.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* New request highlight/blink effect - VIVID PULSE FOR TEST */
+@keyframes highlight-glow {
+
+  0%,
+  100% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: rgba(59, 130, 246, 0.15);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.new-request-highlight {
+  animation: highlight-glow 0.3s ease-in-out linear !important;
+  /* Faster for test */
+  position: relative;
+  z-index: 10;
+  border: 2px solid #3b82f6 !important;
+  /* Force a blue border */
 }

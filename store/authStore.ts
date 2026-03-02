@@ -27,8 +27,10 @@ export interface User {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
+  refreshToken: string | null;
 
-  setAuth: (user: User, access: string) => void;
+  setAuth: (user: User, access: string, refresh?: string | null) => void;
+  setToken: (access: string, refresh?: string | null) => void;
   logout: () => void;
 }
 
@@ -61,18 +63,28 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       accessToken: null,
+      refreshToken: null,
 
-      setAuth: (user, access) => {
+      setAuth: (user, access, refresh) => {
         set({
           user,
           accessToken: access,
+          refreshToken: refresh || null,
         });
+      },
+
+      setToken: (access, refresh) => {
+        set((state) => ({
+          accessToken: access,
+          refreshToken: refresh !== undefined ? refresh : state.refreshToken
+        }));
       },
 
       logout: () => {
         set({
           user: null,
           accessToken: null,
+          refreshToken: null,
         });
       },
     }),
@@ -82,6 +94,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
       }),
     }
   )

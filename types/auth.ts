@@ -5,6 +5,7 @@ export interface AuthResponse {
   id?: string;
   user?: User | null;
   accessToken?: string | null;
+  refreshToken?: string | null;
   expiresIn?: number | null;
   tokenType?: string | null;
 }

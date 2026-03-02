@@ -1,9 +1,10 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { ThemeProvider } from "@/provider/theme-provider";
+import { ThemeProvider } from "@/components/common/provider/theme-provider";
 import { useAuthStore } from "@/store/authStore";
 import { decrypt } from "@/lib/crypto";
+import FCMNotification from "@/components/FCMNotification";
 
 export default function AppProviders({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
@@ -30,5 +31,10 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     );
   }
 
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider>
+      <FCMNotification />
+      {children}
+    </ThemeProvider>
+  );
 }

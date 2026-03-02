@@ -64,16 +64,7 @@ api.interceptors.response.use(
       !original?._retry &&
       !AUTH_FREE_ROUTES.some(route => original.url?.includes(route))
     ) {
-      if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
-        console.error("❌ Max token refresh retries reached. Logging out...");
-        useAuthStore.getState().logout();
-        if (typeof window !== "undefined") window.location.replace("/");
-        return Promise.reject(error);
-      }
-
-      original._retry = true;
-      refreshRetryCount++;
-
+      // If we are already refreshing, just queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           queue.push((token) => {
@@ -84,42 +75,82 @@ api.interceptors.response.use(
         });
       }
 
+      // Check max retries only when STARTING a new refresh session
+      if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
+        console.error("❌ Max token refresh retries reached. Logging out...");
+        useAuthStore.getState().logout();
+        if (typeof window !== "undefined") window.location.replace("/");
+        return Promise.reject(error);
+      }
+
+      original._retry = true;
       isRefreshing = true;
+      refreshRetryCount++;
 
       try {
-        console.warn("🔄 Refreshing access token...");
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+        const refreshPath = ENDPOINTS.AUTH.REFRESH_TOKEN.replace(/^\//, "");
+        const refreshUrl = `${apiUrl}/${refreshPath}`;
 
-        const res = await api.post(ENDPOINTS.AUTH.REFRESH_TOKEN);
+        console.warn(`🔄 Refreshing access token (Attempt ${refreshRetryCount})...`);
+
+        const store = useAuthStore.getState();
+        const storedRefreshToken = store.refreshToken;
+
+        const res = await axios.post(
+          refreshUrl,
+          {
+            refresh_token: storedRefreshToken,
+            refreshToken: storedRefreshToken
+          },
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+              ...(storedRefreshToken ? { Authorization: `Bearer ${storedRefreshToken}` } : {})
+            }
+          }
+        );
 
         const body = res.data ?? {};
         const payload = body.data ?? body;
         const newToken = payload.access_token ?? payload.token ?? payload.accessToken;
+        const newRefreshToken = payload.refresh_token ?? payload.refreshToken ?? null;
 
         if (!newToken) {
           throw new Error("No access token returned from refresh endpoint");
         }
 
-        const store = useAuthStore.getState();
-        if (store.user) {
-          store.setAuth(store.user, newToken);
+        store.setToken(newToken, newRefreshToken);
+
+        isRefreshing = false;
+        resolveQueue(newToken);
+
+        original.headers.Authorization = `Bearer ${newToken}`;
+        // Important: reset retry count on successful refresh result
+        refreshRetryCount = 0;
+
+        return api(original);
+      } catch (refreshError: any) {
+        console.error("❌ Refresh token failed", refreshError);
+        isRefreshing = false;
+        resolveQueue(null);
+
+        // Treat 400, 401, or 403 as session death for the refresh endpoint
+        const failureStatus = refreshError.response?.status;
+        if ([400, 401, 403].includes(failureStatus)) {
+          console.error("🚪 Refresh token rejected. Logging out...");
+          useAuthStore.getState().logout();
+          if (typeof window !== "undefined") window.location.replace("/");
         }
 
-        resolveQueue(newToken);
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return api(original);
-      } catch (refreshError) {
-        console.error("❌ Refresh token failed", refreshError);
-        resolveQueue(null);
-        useAuthStore.getState().logout();
-        if (typeof window !== "undefined") window.location.replace("/");
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 
-    // Direct logout for other 401 scenarios (auth-free routes that somehow 401)
-    if (error.response?.status === 401) {
+    // If it WAS a retry and it still failed with 401, that's also a logout (Session died during retry)
+    if (error.response?.status === 401 && original?._retry) {
+      console.error("🚪 Retry failed with 401. Force logout for URL:", original.url);
       useAuthStore.getState().logout();
       if (typeof window !== "undefined") window.location.replace("/");
     }

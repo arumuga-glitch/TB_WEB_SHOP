@@ -109,7 +109,7 @@ export function ReferenceIdModal({
       </div>
 
       {/* ================= MOBILE MODAL ================= */}
-      <div className="md:hidden z-[9999] absolute bottom-16 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl shadow-xl animate-slideUp">
+      <div className="md:hidden z-[9999] absolute bottom-18 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl shadow-xl animate-slideUp">
 
         {/* Drag Handle */}
         <div className="flex justify-center pt-2">

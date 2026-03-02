@@ -41,7 +41,7 @@ export function useMqttNewRequest(shopId: string | undefined, isOnline: boolean 
         const handleMessage = (payload: unknown) => {
             console.log("🔔 [MQTT HOOK] Received message payload:", payload);
             setConnected(true);
-            fetchRequestsRef.current(false);
+            // Removed redundant fetchRequests call to prevent race condition with addRequest
 
             // Try to parse the raw request from the MQTT payload
             let serviceRequest: ServiceRequest | null = null;

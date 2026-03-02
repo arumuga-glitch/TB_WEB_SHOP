@@ -64,7 +64,7 @@ export default function LoginPage() {
                                 width={180}
                                 height={60}
                                 className="h-20 w-auto"
-                                src="/logo.svg"
+                                src="/assets/images/img_logo_splash.png"
                             />
                         </a>
                     </div>

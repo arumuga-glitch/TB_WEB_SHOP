@@ -7,26 +7,20 @@ import {
 } from "react-icons/fi";
 import { clsx } from "clsx";
 
-const AUTO_DISMISS_SECONDS = 30;
-
 interface NewRequestAlertProps {
     request: ServiceRequest;
     onAccept: () => Promise<void>;
     onReject: () => Promise<void>;
-    onDismiss: () => void;
 }
 
 export default function NewRequestAlert({
     request,
     onAccept,
     onReject,
-    onDismiss,
 }: NewRequestAlertProps) {
     const [accepting, setAccepting] = useState(false);
     const [rejecting, setRejecting] = useState(false);
     const [visible, setVisible] = useState(false);
-    const [countdown, setCountdown] = useState(AUTO_DISMISS_SECONDS);
-    const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
     // Slide-in / Fade-in on mount
     useEffect(() => {
@@ -34,39 +28,11 @@ export default function NewRequestAlert({
         return () => clearTimeout(t);
     }, []);
 
-    // Auto-dismiss countdown
-    useEffect(() => {
-        countdownRef.current = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    handleDismiss();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => {
-            if (countdownRef.current) clearInterval(countdownRef.current);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const stopCountdown = () => {
-        if (countdownRef.current) {
-            clearInterval(countdownRef.current);
-            countdownRef.current = null;
-        }
-    };
-
     const handleDismiss = () => {
-        stopCountdown();
         setVisible(false);
-        setTimeout(onDismiss, 350);
     };
 
     const handleAccept = async () => {
-        stopCountdown();
         setAccepting(true);
         try {
             await onAccept();
@@ -77,7 +43,6 @@ export default function NewRequestAlert({
     };
 
     const handleReject = async () => {
-        stopCountdown();
         setRejecting(true);
         try {
             await onReject();
@@ -87,21 +52,14 @@ export default function NewRequestAlert({
         }
     };
 
-    // Percentage for circular timer
-    const progress = (countdown / AUTO_DISMISS_SECONDS) * 100;
-    const radius = 18;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (progress / 100) * circumference;
-
     return (
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
-            {/* Backdrop */}
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden pointer-events-auto">
+            {/* Backdrop - Click handler removed to prevent dismissal */}
             <div
                 className={clsx(
-                    "absolute inset-0 bg-black/50 transition-opacity duration-300 backdrop-blur-sm",
+                    "absolute inset-0 bg-black/60 transition-opacity duration-300 backdrop-blur-sm",
                     visible ? "opacity-100" : "opacity-0"
                 )}
-                onClick={handleDismiss}
             />
 
             {/* Modal Container */}
@@ -117,33 +75,9 @@ export default function NewRequestAlert({
                 <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-4 mb-2 sm:hidden" />
 
                 <div className="px-6 py-4 flex flex-col gap-6">
-                    {/* Header: Title and Circular Timer */}
+                    {/* Header: Title */}
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">New Request</h2>
-
-                        {/* Circular Timer */}
-                        <div className="relative w-12 h-12 flex items-center justify-center">
-                            <svg className="w-full h-full -rotate-90">
-                                <circle
-                                    cx="24" cy="24" r={radius}
-                                    fill="transparent"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                    className="text-gray-200 dark:text-gray-700"
-                                />
-                                <circle
-                                    cx="24" cy="24" r={radius}
-                                    fill="transparent"
-                                    stroke="#0056D2"
-                                    strokeWidth="4"
-                                    strokeDasharray={circumference}
-                                    strokeDashoffset={offset}
-                                    strokeLinecap="round"
-                                    className="transition-all duration-1000 linear"
-                                />
-                            </svg>
-                            <span className="absolute text-sm font-bold text-gray-900 dark:text-white">{countdown}s</span>
-                        </div>
                     </div>
 
                     {/* Request Details Card */}

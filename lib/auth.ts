@@ -66,6 +66,7 @@ export const verifyOtpSmart = async (
 
     const user = payload.user ?? payload.user_data ?? null;
     const accessToken = payload.access_token ?? payload.token ?? null;
+    const refreshToken = payload.refresh_token ?? payload.refreshToken ?? null;
 
     if (!user || !accessToken) {
       throw new Error("Incomplete authentication data");
@@ -75,6 +76,7 @@ export const verifyOtpSmart = async (
       isNewUser: false,
       user,
       accessToken,
+      refreshToken,
       expiresIn: payload.expires_in ?? null,
       tokenType: payload.token_type ?? "Bearer",
     };

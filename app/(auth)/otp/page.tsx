@@ -132,9 +132,9 @@ export default function OtpPage() {
         router.replace(`/register?mobile=${mobile}&id=${verifyId}`);
         console.log(`${verifyId}`)
       } else {
-        const { user, accessToken } = result;
+        const { user, accessToken, refreshToken } = result;
         if (user && accessToken) {
-          useAuthStore.getState().setAuth(user, accessToken);
+          useAuthStore.getState().setAuth(user, accessToken, refreshToken);
           toast.success("Login successful!");
           router.replace("/dashboard");
         } else {
@@ -201,7 +201,7 @@ export default function OtpPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <SidebarIcon
-            src="/logo.svg"
+            src="/assets/images/img_logo_splash.png"
             alt="Thendral Booking"
             height={64}
             width={192}

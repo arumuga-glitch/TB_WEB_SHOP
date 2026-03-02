@@ -4,6 +4,8 @@ import { FiCalendar } from "react-icons/fi";
 import { ServiceRequest } from "@/types/myrequest";
 import { getUIStage } from "@/lib/requestStage";
 import { SidebarIcon } from "../ui/SidebarIcon";
+import { useServiceRequestStore } from "@/store/request.store";
+import { useEffect, useRef } from "react";
 
 interface RequestCardProps {
     request: ServiceRequest;
@@ -32,6 +34,37 @@ export default function RequestCard({
         return styles[status] || "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 border-gray-300";
     };
     const stage = getUIStage(request);
+    const newRequestIds = useServiceRequestStore((state) => state.newRequestIds);
+    const highlightedRequestId = useServiceRequestStore((state) => state.highlightedRequestId);
+    const setHighlightedRequestId = useServiceRequestStore((state) => state.setHighlightedRequestId);
+    const clearNewRequestId = useServiceRequestStore((state) => state.clearNewRequestId);
+
+    // Check if this specific card should be highlighted
+    const isNew = newRequestIds.has(request.id) || highlightedRequestId === request.id;
+
+    const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const wasNewRef = useRef(false);
+
+    useEffect(() => {
+        if (isNew) {
+            // Cancel any existing timer first to avoid multiple concurrent timers
+            if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+
+            // Start fresh 5-second highlight countdown
+            highlightTimerRef.current = setTimeout(() => {
+                clearNewRequestId(request.id);
+                setHighlightedRequestId(null);
+                highlightTimerRef.current = null;
+            }, 5000);
+        }
+    }, [isNew, request.id, request.status, clearNewRequestId, setHighlightedRequestId]);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        };
+    }, []);
 
     const displayDateTime = () => {
         if (!request.requestedDate || !request.requestedTime) return "—";
@@ -42,7 +75,7 @@ export default function RequestCard({
 
         <>
             <div
-                className="md:hidden rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer"
+                className={`md:hidden rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer ${isNew ? "new-request-highlight" : ""}`}
                 onClick={onSelect}
             >
                 <div className="bg-blue-50 dark:bg-gray-800 px-4 py-6 space-y-4 ">
@@ -86,10 +119,10 @@ export default function RequestCard({
 
             {/* Desktop view */}
             <div
-                className={`request-card hidden sm:block p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border ${isSelected
+                className={`request-card hidden sm:block p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 ${isSelected
                     ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/30"
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                    } transition-all cursor-pointer`}
+                    } ${isNew ? "new-request-highlight" : ""} transition-all cursor-pointer`}
                 onClick={(e) => {
                     if ((e.target as HTMLElement).closest('button')) return;
                     onSelect();

@@ -199,6 +199,9 @@ export default function RegisterPage() {
       const accessToken =
         data.access_token || data.token;
 
+      const refreshToken =
+        data.refresh_token || data.refreshToken || null;
+
       const user = data.user;
 
       if (!accessToken || !user) {
@@ -207,7 +210,7 @@ export default function RegisterPage() {
 
       useAuthStore
         .getState()
-        .setAuth(user, accessToken);
+        .setAuth(user, accessToken, refreshToken);
 
       toast.success("Registration successful");
       router.replace("/dashboard");
@@ -227,7 +230,7 @@ export default function RegisterPage() {
             width={140}
             height={40}
             className="h-10 w-auto"
-            src="/logo.svg"
+            src="/assets/images/img_logo_splash.png"
           />
         </div>
       </div>
@@ -240,7 +243,7 @@ export default function RegisterPage() {
               width={180}
               height={60}
               className="h-16 mx-auto mb-4"
-              src="/logo.svg"
+              src="/assets/images/img_logo_splash.png"
             />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Complete Your Registration

@@ -14,7 +14,7 @@ export default function MqttRequestListener() {
     const shopId = shop?.id;
     const isOnline = shop?.is_online ?? false;
 
-    const { accept, reject } = useServiceRequestStore();
+    const { accept, reject, fetchRequests, setHighlightedRequestId } = useServiceRequestStore();
     const { incoming, dismiss } = useMqttNewRequest(shopId, isOnline);
 
     const lastNotifiedId = useRef<string | null>(null);
@@ -79,15 +79,25 @@ export default function MqttRequestListener() {
 
     const handleAccept = useCallback(async () => {
         if (!incoming || !shopId) return;
+        const requestId = incoming.request.id;
         try {
-            await accept(incoming.request.id, shopId);
+            await accept(requestId, shopId);
             toast.success("✅ Request accepted!");
             stopAlert();
+
+            // Navigate to request page first
+            router.push("/dashboard/requests");
+
+            // Set highlight ID to ensure it highlights when the page loads
+            setHighlightedRequestId(requestId);
+
             dismiss();
+            // Sync temp MQTT entry → real API entry after server commits
+            setTimeout(() => fetchRequests(false), 1500);
         } catch {
             toast.error("Failed to accept request");
         }
-    }, [incoming, shopId, accept, stopAlert, dismiss]);
+    }, [incoming, shopId, accept, fetchRequests, stopAlert, dismiss, router, setHighlightedRequestId]);
 
     const handleReject = useCallback(async () => {
         if (!incoming || !shopId) return;
@@ -97,15 +107,12 @@ export default function MqttRequestListener() {
             toast.success("Request rejected");
             stopAlert();
             dismiss();
+            // Sync temp MQTT entry → real API entry after server commits
+            setTimeout(() => fetchRequests(false), 1500);
         } catch {
             toast.error("Failed to reject request");
         }
-    }, [incoming, shopId, reject, stopAlert, dismiss]);
-
-    const handleDismissPopup = useCallback(() => {
-        stopAlert();
-        dismiss();
-    }, [stopAlert, dismiss]);
+    }, [incoming, shopId, reject, fetchRequests, stopAlert, dismiss]);
 
     if (!incoming || !isOnline) return null;
 
@@ -114,7 +121,6 @@ export default function MqttRequestListener() {
             request={incoming.request}
             onAccept={handleAccept}
             onReject={handleReject}
-            onDismiss={handleDismissPopup}
         />
     );
 }

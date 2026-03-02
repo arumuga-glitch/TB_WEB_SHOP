@@ -30,7 +30,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
   const [showRef, setShowRef] = useState(false);
   const [showChargeUI, setShowChargeUI] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   // UI states
   const [activeSection, setActiveSection] = useState<"service" | "timeline" | "price" | null>(null);
@@ -209,7 +208,7 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
       if (!paymentCollected) {
         handlePayment();
       } else {
-        setShowCompleteConfirm(true);
+        handleCompleteConfirm();
       }
     }
   };
@@ -254,12 +253,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
   };
 
   const handleCompleteConfirm = async () => {
-    if (!paymentCollected) {
-      toast.error("Payment is pending. Please collect payment first.");
-      setShowCompleteConfirm(false);
-      return;
-    }
-
     if (!shopID) return;
 
     try {
@@ -279,8 +272,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
       handleClose();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to mark as completed");
-    } finally {
-      setShowCompleteConfirm(false);
     }
   };
 
@@ -562,88 +553,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
             </div>
           )}
         </div>
-
-        <ConfirmStatusModal
-          open={showConfirm}
-          title="Update Status"
-          description={`Are you sure you want to update status from ${request.status} to ${getNextStatusLabel()}?`}
-          confirmText="Yes, Continue"
-          rejectText="Cancel Request"
-          onClose={() => setShowConfirm(false)}
-          onReject={() => {
-            setShowConfirm(false);
-            setShowRejectModal(true);
-          }}
-          onConfirm={() => {
-            setShowConfirm(false);
-            handleStatusConfirm();
-          }}
-        />
-
-        {/* OTP Verification Modal */}
-        <VerifyOTPModal
-          open={showOTP}
-          correctOtp={request.otp}
-          onClose={() => setShowOTP(false)}
-          onCancel={() => setShowOTP(false)}
-          onConfirm={handleOTPConfirm}
-        />
-
-        {/* Reference ID Modal */}
-        <ReferenceIdModal
-          open={showRef}
-          title="Update Status"
-          placeholder="Reference Number"
-          onClose={() => setShowRef(false)}
-          onCancel={() => setShowRef(false)}
-          onConfirm={handleReferenceConfirm}
-        />
-
-        {/* Complete Service Confirmation */}
-        <ConfirmStatusModal
-          open={showCompleteConfirm}
-          title="Complete Service"
-          description={
-            paymentCollected
-              ? "Are you sure you want to update status from Applied to Completed?"
-              : "Payment not yet collected. Please collect payment before completing the service."
-          }
-          confirmText="Yes, Complete"
-          rejectText="No"
-          variant="default"
-          onClose={() => setShowCompleteConfirm(false)}
-          onReject={() => {
-            setShowCompleteConfirm(false);
-            setShowRejectModal(true);
-          }}
-          onConfirm={handleCompleteConfirm}
-        />
-
-        {/* Reject Reason Modal */}
-        <RejectReasonModal
-          open={showRejectModal}
-          onClose={() => setShowRejectModal(false)}
-          onCancel={() => setShowRejectModal(false)}
-          onConfirm={handleRejectConfirm}
-        />
-
-        {/* Custom Charge Modal */}
-        <CustomChargeModal
-          open={showChargeUI}
-          onClose={() => {
-            setShowChargeUI(false);
-            setChargeName("");
-            setChargeAmount("");
-            setEditingCharge(null);
-          }}
-          chargeName={chargeName}
-          chargeAmount={chargeAmount}
-          setChargeName={setChargeName}
-          setChargeAmount={setChargeAmount}
-          onSubmit={handleAddCustomCharge}
-          loading={addingCharge}
-          isEditing={!!editingCharge}
-        />
       </div>
     </div>
   );
@@ -994,26 +903,6 @@ export default function RequestDetailsPage({ request, setShowDetails }: Props) {
         onClose={() => setShowRef(false)}
         onCancel={() => setShowRef(false)}
         onConfirm={handleReferenceConfirm}
-      />
-
-      {/* Complete Service Confirmation */}
-      <ConfirmStatusModal
-        open={showCompleteConfirm}
-        title="Complete Service"
-        description={
-          paymentCollected
-            ? "Are you sure you want to update status from Applied to Completed?"
-            : "Payment not yet collected. Please collect payment before completing the service."
-        }
-        confirmText="Yes, Complete"
-        rejectText="No"
-        variant="default"
-        onClose={() => setShowCompleteConfirm(false)}
-        onReject={() => {
-          setShowCompleteConfirm(false);
-          setShowRejectModal(true);
-        }}
-        onConfirm={handleCompleteConfirm}
       />
 
       {/* Reject Reason Modal */}

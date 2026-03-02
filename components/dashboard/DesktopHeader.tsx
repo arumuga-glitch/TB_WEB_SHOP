@@ -53,10 +53,12 @@ export function DesktopHeader({
 
         {/* Right: notifications + profile */}
         <div className="flex items-center gap-6">
-          <Notifications
-            showNotifications={showNotifications}
-            toggleNotifications={toggleNotifications}
-          />
+          <div className="relative">
+            <Notifications
+              showNotifications={showNotifications}
+              toggleNotifications={toggleNotifications}
+            />
+          </div>
 
           <UserProfile
             isOnline={isOnline}
