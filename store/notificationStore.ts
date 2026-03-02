@@ -7,7 +7,7 @@ export interface Notification {
     body: string;
     time: string;
     unread: boolean;
-    type?: 'news' | 'booking' | 'payment';
+    type?: 'news' | 'alerts';
     data?: any;
 }
 

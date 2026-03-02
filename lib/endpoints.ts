@@ -11,6 +11,7 @@ export const ENDPOINTS = {
 
     USER: {
         UPDATE: (userId: string) => `/user/update/${userId}`,
+        FCM_TOKEN: "/user/fcm-token",
     },
 
     SHOP: {
@@ -31,7 +32,7 @@ export const ENDPOINTS = {
     },
 
     SERVICE_REQUEST: {
-        LIST: "/service-request/list",
+        LIST: (shopId: string) => `/service-request/list?shop_id=${shopId}`,
         ACCEPT: "/service-request/accept",
         REJECT: "/service-request/reject",
         STATUS_UPDATE: "/service-request/shop/status-update",

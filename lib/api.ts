@@ -237,6 +237,17 @@ export const updateUser = async (userId: string, payload: { name: string; email_
   return data;
 };
 
+// FCM Token Registration
+export interface FcmTokenPayload {
+  fcm_token?: string;
+  web_fcm_token?: string;
+}
+
+export const updateFcmToken = async (payload: FcmTokenPayload) => {
+  const { data } = await api.put(ENDPOINTS.USER.FCM_TOKEN, payload);
+  return data;
+};
+
 // Maps
 
 export const reverseGeocode = async (id: string, lat: number, lng: number) => {

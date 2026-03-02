@@ -19,24 +19,35 @@ const messaging = firebase.messaging();
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
+// Resolve the default URL based on topic
+function resolveTopicUrl(payload) {
+    const topic = payload?.data?.topic || '';
+    if (topic === 'alerts') return '/dashboard';
+    return '/dashboard/news'; 
+}
+
 // Handle background messages (app is closed or in background)
 messaging.onBackgroundMessage((payload) => {
     console.log('[SW] Background message received:', payload);
 
     const title = payload.notification?.title || 'New Notification';
+    const topic = payload?.data?.topic || 'news';
+    const defaultUrl = resolveTopicUrl(payload);
+
     const options = {
         body: payload.notification?.body || '',
         icon: payload.notification?.image || '/assets/images/img_logo.png',
         badge: '/assets/images/img_logo.png',
         data: {
-            url: payload.data?.url || '/dashboard/news',
+            url: payload.data?.url || defaultUrl,
+            topic,
         },
     };
 
     self.registration.showNotification(title, options);
 });
 
-// Handle notification click — open/focus the news page
+// Handle notification click — open/focus the correct page based on topic
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const urlToOpen = event.notification.data?.url || '/dashboard/news';

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useServiceRequestStore } from "@/store/request.store";
 import { useShopStore } from "@/store/shopStore";
 import { ServiceRequest } from "@/types/myrequest";
@@ -26,25 +26,26 @@ export default function MyRequestsPage() {
 
   const shopID = useShopStore((state) => state.shop?.id);
 
-  const pollingStarted = useRef(false);
   // Handle polling and initial fetch
   useEffect(() => {
+    if (!shopID) return; // wait until shop is loaded
+
     if (requests.length === 0) {
       // No data at all — show loader and fetch
-      fetchRequests(true);
+      fetchRequests(shopID, true);
     } else if (newRequestIds.size === 0) {
       // We have data but no pending MQTT entries — safe to background-refresh
-      fetchRequests(false);
+      fetchRequests(shopID, false);
     }
     // If newRequestIds.size > 0, skip fetch to avoid race-condition duplicates.
     // The polling interval will sync when MQTT entries are confirmed by the server.
 
-    startPolling();
+    startPolling(shopID);
 
     return () => {
       stopPolling();
     };
-  }, []); // Only run once on mount
+  }, [shopID]); // re-run when shop becomes available
 
 
   const [filterStatus, setFilterStatus] = useState<
@@ -111,7 +112,7 @@ export default function MyRequestsPage() {
       await accept(requestId, shopID);
       toast.success("Request accepted. Now confirm to start processing.");
       // Delay sync to let server commit the status change, then replace temp MQTT entry
-      setTimeout(() => fetchRequests(false), 1500);
+      setTimeout(() => shopID && fetchRequests(shopID, false), 1500);
     } catch (err) {
       toast.error("Failed to accept request");
       console.error(err);
@@ -134,7 +135,7 @@ export default function MyRequestsPage() {
       await reject(requestId, shopID, reason.trim());
       toast.success("Request rejected successfully");
       // Delay sync to let server commit the status change, then replace temp MQTT entry
-      setTimeout(() => fetchRequests(false), 1500);
+      setTimeout(() => shopID && fetchRequests(shopID, false), 1500);
     } catch (err) {
       toast.error("Failed to reject request");
       console.error(err);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { MiniCard } from "@/components/dashboard/MiniCard";
 import { useShopStore } from "@/store/shopStore";
+import { useAuthStore } from "@/store/authStore";
 import { getDashboardStats } from "@/lib/api";
 
 interface DashboardStats {
@@ -17,11 +18,17 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { shop, loading: shopLoading } = useShopStore();
+  const { shop, loading: shopLoading, fetchShopByUser } = useShopStore();
+  const userId = useAuthStore((s) => s.user?.id);
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  useEffect(() => {
+    if (userId) {
+      fetchShopByUser(userId);
+    }
+  }, [userId, fetchShopByUser]);
 
   useEffect(() => {
     if (!shop?.id) return;
@@ -30,7 +37,9 @@ export default function DashboardPage() {
       setStatsLoading(true);
       try {
         const res = await getDashboardStats(shop.id);
-        setStats(res.data);
+        // Robust extraction from { success: true, data: { ... } } or { status_counts: ... }
+        const statsData = res?.data ?? res;
+        setStats(statsData);
       } catch (err) {
         console.error("Dashboard fetch failed:", err);
       } finally {
@@ -41,14 +50,49 @@ export default function DashboardPage() {
     fetchDashboard();
   }, [shop?.id]);
 
-  if (shopLoading || !shop?.id) {
+  // Safe accessor helper for nested or flat status counts
+  const getCount = (key: string) => {
+    if (!stats || statsLoading) return 0;
+
+    // Use statsData directly or status_counts nested object
+    const counts = stats.status_counts || stats.counts || stats;
+
+    // Helper for case-insensitive and varying key lookup (handles objects and arrays)
+    const findValue = (k: string) => {
+      const lowerK = k.toLowerCase();
+
+      if (Array.isArray(counts)) {
+        const item = counts.find(i =>
+          (i.status?.toLowerCase() === lowerK) ||
+          (i.name?.toLowerCase() === lowerK) ||
+          (i.key?.toLowerCase() === lowerK)
+        );
+        return item ? Number(item.count ?? item.value ?? 0) : 0;
+      }
+
+      const found = Object.keys(counts).find(ck => ck.toLowerCase() === lowerK);
+      return found ? Number(counts[found]) : 0;
+    };
+
+    if (key === 'pending') {
+      return findValue('pending') + findValue('upcoming');
+    }
+
+    if (key === 'active') {
+      return findValue('active') + findValue('processing') + findValue('in_progress');
+    }
+
+    return findValue(key);
+  };
+
+  const totalEarnings = statsLoading ? null : (stats?.total_earnings ?? stats?.earnings ?? stats?.total_earning ?? 0);
+
+  if (shopLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Loading shop information...
-          </p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+          <p className="text-gray-500 animate-pulse">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -81,8 +125,8 @@ export default function DashboardPage() {
 
               {/* Earnings */}
               <div className="text-right">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ₹ {(stats?.total_earnings ?? 0).toLocaleString()}
+                <p className={`text-2xl font-bold text-gray-900 dark:text-white ${statsLoading ? 'animate-pulse' : ''}`}>
+                  ₹ {totalEarnings !== null ? Number(totalEarnings).toLocaleString() : '...'}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   Total Earnings
@@ -103,35 +147,38 @@ export default function DashboardPage() {
 
           <DashboardCard
             title="Total Earnings"
-            value={`₹ ${(stats?.total_earnings ?? 0).toLocaleString()}`}
+            value={statsLoading ? '...' : `₹ ${Number(totalEarnings ?? 0).toLocaleString()}`}
             icon={{ default: "/assets/images/img_rupee.svg" }}
           />
         </div>
 
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">My Requests</h2>
+        </div>
 
-        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          My Requests
-        </h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <MiniCard
             title="Upcoming"
-            value={stats?.status_counts.pending ?? 0}
+            value={statsLoading ? '...' : getCount('pending')}
+            isLoading={statsLoading}
             icon={{ default: "/assets/images/img_upcoming.svg" }}
           />
           <MiniCard
             title="Processing"
-            value={stats?.status_counts.active ?? 0}
+            value={statsLoading ? '...' : getCount('active')}
+            isLoading={statsLoading}
             icon={{ default: "/assets/images/img_in_progress.svg" }}
           />
           <MiniCard
             title="Applied"
-            value={stats?.status_counts.applied ?? 0}
+            value={statsLoading ? '...' : getCount('applied')}
+            isLoading={statsLoading}
             icon={{ default: "/assets/images/img_processing.svg" }}
           />
           <MiniCard
             title="Completed"
-            value={stats?.status_counts.completed ?? 0}
+            value={statsLoading ? '...' : getCount('completed')}
+            isLoading={statsLoading}
             icon={{ default: "/assets/images/img_done.svg" }}
           />
         </div>

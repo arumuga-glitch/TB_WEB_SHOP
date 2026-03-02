@@ -75,10 +75,10 @@ export const mapToUI = (item: RawServiceRequest): ServiceRequest => {
 interface ServiceRequestStore {
     loading: boolean;
     requests: ServiceRequest[];
-    startPolling: () => void;
+    startPolling: (shopId: string) => void;
     stopPolling: () => void;
     pollingInterval: NodeJS.Timeout | null;
-    fetchRequests: (showLoader?: boolean) => Promise<void>;
+    fetchRequests: (shopId: string, showLoader?: boolean) => Promise<void>;
 
     upcoming: () => ServiceRequest[];
     applied: () => ServiceRequest[];
@@ -189,12 +189,12 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         });
     },
 
-    startPolling: () => {
+    startPolling: (shopId: string) => {
         const { pollingInterval } = get();
         if (pollingInterval) return;
 
         const interval = setInterval(() => {
-            get().fetchRequests(false);
+            get().fetchRequests(shopId, false);
         }, 60000);
 
         set({ pollingInterval: interval });
@@ -208,14 +208,15 @@ export const useServiceRequestStore = create<ServiceRequestStore>((set, get) => 
         }
     },
 
-    fetchRequests: async (showLoader = true) => {
+    fetchRequests: async (shopId: string, showLoader = true) => {
+        if (!shopId) return; // guard: never fetch without a shop context
         const shouldShowLoader = showLoader && get().requests.length === 0;
 
         if (get().loading && shouldShowLoader) return;
         if (shouldShowLoader) set({ loading: true });
 
         try {
-            const res = await api.get(ENDPOINTS.SERVICE_REQUEST.LIST, {
+            const res = await api.get(ENDPOINTS.SERVICE_REQUEST.LIST(shopId), {
                 params: { page: 1, limit: 1000 },
             });
 

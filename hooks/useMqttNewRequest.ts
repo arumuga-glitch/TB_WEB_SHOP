@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { subscribeToTopic, newRequestTopic } from "@/lib/mqtt-service";
 import { useServiceRequestStore, mapMqttToUI } from "@/store/request.store";
 import { ServiceRequest } from "@/types/myrequest";
@@ -21,12 +21,7 @@ interface UseMqttNewRequestReturn {
 export function useMqttNewRequest(shopId: string | undefined, isOnline: boolean = true): UseMqttNewRequestReturn {
     const [incoming, setIncoming] = useState<IncomingRequest | null>(null);
     const [connected, setConnected] = useState(false);
-    const { fetchRequests, addRequest } = useServiceRequestStore();
-
-    const fetchRequestsRef = useRef(fetchRequests);
-    useEffect(() => {
-        fetchRequestsRef.current = fetchRequests;
-    }, [fetchRequests]);
+    const { addRequest } = useServiceRequestStore();
 
     const dismiss = useCallback(() => setIncoming(null), []);
 

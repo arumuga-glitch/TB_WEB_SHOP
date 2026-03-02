@@ -93,7 +93,7 @@ export default function MqttRequestListener() {
 
             dismiss();
             // Sync temp MQTT entry → real API entry after server commits
-            setTimeout(() => fetchRequests(false), 1500);
+            setTimeout(() => shopId && fetchRequests(shopId, false), 1500);
         } catch {
             toast.error("Failed to accept request");
         }
@@ -108,7 +108,7 @@ export default function MqttRequestListener() {
             stopAlert();
             dismiss();
             // Sync temp MQTT entry → real API entry after server commits
-            setTimeout(() => fetchRequests(false), 1500);
+            setTimeout(() => shopId && fetchRequests(shopId, false), 1500);
         } catch {
             toast.error("Failed to reject request");
         }
