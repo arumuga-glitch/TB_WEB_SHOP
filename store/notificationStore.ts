@@ -14,7 +14,7 @@ export interface Notification {
 interface NotificationState {
     notifications: Notification[];
     unreadCount: number;
-    addNotification: (notification: Omit<Notification, 'id' | 'time' | 'unread'>) => void;
+    addNotification: (notification: Omit<Notification, 'id' | 'time' | 'unread'> & { id?: string }) => void;
     markAsRead: (id: string) => void;
     markAllAsRead: () => void;
     clearAll: () => void;
@@ -27,17 +27,24 @@ export const useNotificationStore = create<NotificationState>()(
             unreadCount: 0,
 
             addNotification: (newNotif) => {
-                const notification: Notification = {
-                    ...newNotif,
-                    id: Math.random().toString(36).substring(7),
-                    time: new Date().toISOString(),
-                    unread: true,
-                };
+                const id = newNotif.id || Math.random().toString(36).substring(7);
 
-                set((state) => ({
-                    notifications: [notification, ...state.notifications].slice(0, 50), // Keep last 50
-                    unreadCount: state.unreadCount + 1,
-                }));
+                set((state) => {
+                    // Prevent duplicates
+                    if (state.notifications.some(n => n.id === id)) return state;
+
+                    const notification: Notification = {
+                        ...newNotif,
+                        id,
+                        time: new Date().toISOString(),
+                        unread: true,
+                    };
+
+                    return {
+                        notifications: [notification, ...state.notifications].slice(0, 50),
+                        unreadCount: state.unreadCount + 1,
+                    };
+                });
             },
 
             markAsRead: (id) => {

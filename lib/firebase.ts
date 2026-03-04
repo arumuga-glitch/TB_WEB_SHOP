@@ -24,7 +24,17 @@ if (typeof window !== "undefined" && app) {
 }
 
 export const requestForToken = async () => {
-    if (!messaging) return;
+    if (typeof window === "undefined") return;
+
+    if (!isConfigValid) {
+        console.warn("⚠️ Firebase configuration is missing or invalid. Check your .env file.");
+        return;
+    }
+
+    if (!messaging) {
+        console.warn("⚠️ Firebase Messaging is not initialized. Check if background notifications are supported in this browser.");
+        return;
+    }
 
     try {
         // Register the service worker manually to avoid default registration timeout
@@ -32,19 +42,21 @@ export const requestForToken = async () => {
             scope: '/',
         });
 
+        // Ensure service worker is active before requesting token
+        await navigator.serviceWorker.ready;
+
         const currentToken = await getToken(messaging, {
             vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
             serviceWorkerRegistration: registration,
         });
 
         if (currentToken) {
-            console.log("FCM Token:", currentToken);
             return currentToken;
         } else {
-            console.log("No registration token available. Request permission to generate one.");
+            console.warn("⚠️ No registration token available. Request permission to generate one.");
         }
     } catch (err) {
-        console.error("An error occurred while retrieving token. ", err);
+        console.error("❌ An error occurred while retrieving FCM token: ", err);
     }
 };
 

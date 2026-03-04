@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
       setToken: (access, refresh) => {
         set((state) => ({
           accessToken: access,
-          refreshToken: refresh !== undefined ? refresh : state.refreshToken
+          refreshToken: refresh ? refresh : state.refreshToken
         }));
       },
 

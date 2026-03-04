@@ -71,7 +71,7 @@ export default function News() {
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <NewsSkeleton key={i} />)
             : news.map((item) => {
-              const imagePath = item.image_i18n.ta || item.image_i18n.en;
+              const imagePath = item.image_i18n?.ta || item.image_i18n?.en;
               const fullImageUrl = imagePath ? `${BASE_URL}${imagePath}` : null;
 
               return (
@@ -85,7 +85,7 @@ export default function News() {
                     {fullImageUrl ? (
                       <img
                         src={fullImageUrl}
-                        alt={item.title_i18n.en}
+                        alt={item.title_i18n?.en}
                         className="w-full h-full object-cover transition-opacity duration-300 hover:opacity-90"
                       />
                     ) : (
@@ -113,10 +113,10 @@ export default function News() {
                   {/* Content Section */}
                   <div className="p-7 flex flex-col flex-grow">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {item.title_i18n.en}
+                      {item.title_i18n?.en}
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-3 mb-8 flex-grow">
-                      {item.description_i18n.en}
+                      {item.description_i18n?.en}
                     </p>
 
                     <div className="pt-5 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
@@ -154,11 +154,11 @@ export default function News() {
           >
             {/* Modal Image Header */}
             <div className="relative h-64 sm:h-80 flex-shrink-0 bg-gray-100 dark:bg-gray-700">
-              {(selectedNews.image_i18n.ta || selectedNews.image_i18n.en) ? (
+              {(selectedNews.image_i18n?.ta || selectedNews.image_i18n?.en) ? (
                 <img
-                  src={`${BASE_URL}${selectedNews.image_i18n.ta || selectedNews.image_i18n.en}`}
+                  src={`${BASE_URL}${selectedNews.image_i18n?.ta || selectedNews.image_i18n?.en}`}
                   className="w-full h-full object-cover"
-                  alt={selectedNews.title_i18n.en}
+                  alt={selectedNews.title_i18n?.en}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -189,7 +189,7 @@ export default function News() {
                   </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                  {selectedNews.title_i18n.en}
+                  {selectedNews.title_i18n?.en}
                 </h2>
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function News() {
             <div className="p-8 sm:p-10 overflow-y-auto flex-grow custom-scrollbar">
               <div className="prose prose-blue dark:prose-invert max-w-none">
                 <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed whitespace-pre-wrap">
-                  {selectedNews.description_i18n.en}
+                  {selectedNews.description_i18n?.en}
                 </p>
               </div>
 

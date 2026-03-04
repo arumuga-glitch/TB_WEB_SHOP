@@ -37,19 +37,34 @@ export default function MqttRequestListener() {
         return () => stopAlert();
     }, [stopAlert]);
 
+    // ── On visibility restore: re-fetch requests to catch anything that arrived
+    //    while the WebSocket was disconnected (tab was closed / backgrounded) ──
+    useEffect(() => {
+        if (!shopId || !isOnline) return;
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                // Small delay so auth store hydrates first (same guard as AppProvider)
+                setTimeout(() => {
+                    fetchRequests(shopId, false);
+                }, 500);
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+    }, [shopId, isOnline, fetchRequests]);
+
     // Handle Notifications and Sound when new request arrives
     useEffect(() => {
         if (!incoming || !isOnline || lastNotifiedId.current === incoming.request.id) return;
 
         // Play alert sound
         const playAlert = () => {
-            // Stop any existing alert first
             stopAlert();
-
             const audio = new Audio("/assets/audio/alert_msg.mp3");
-            audio.loop = true; // Loop until acted upon
+            audio.loop = true;
             audioRef.current = audio;
-
             audio.play().catch(err => {
                 console.warn("Audio playback blocked by browser policy:", err);
             });
@@ -62,7 +77,7 @@ export default function MqttRequestListener() {
                 const notification = new Notification("New Service Request! 🔔", {
                     body: `${incoming.request.customerName} requested ${incoming.request.serviceName}`,
                     icon: "/favicon.ico",
-                    tag: incoming.request.id, // Prevent duplicate notifications for same ID
+                    tag: incoming.request.id,
                     requireInteraction: true,
                 });
 
@@ -84,15 +99,9 @@ export default function MqttRequestListener() {
             await accept(requestId, shopId);
             toast.success("✅ Request accepted!");
             stopAlert();
-
-            // Navigate to request page first
             router.push("/dashboard/requests");
-
-            // Set highlight ID to ensure it highlights when the page loads
             setHighlightedRequestId(requestId);
-
             dismiss();
-            // Sync temp MQTT entry → real API entry after server commits
             setTimeout(() => shopId && fetchRequests(shopId, false), 1500);
         } catch {
             toast.error("Failed to accept request");
@@ -107,7 +116,6 @@ export default function MqttRequestListener() {
             toast.success("Request rejected");
             stopAlert();
             dismiss();
-            // Sync temp MQTT entry → real API entry after server commits
             setTimeout(() => shopId && fetchRequests(shopId, false), 1500);
         } catch {
             toast.error("Failed to reject request");
@@ -121,6 +129,10 @@ export default function MqttRequestListener() {
             request={incoming.request}
             onAccept={handleAccept}
             onReject={handleReject}
+            onClose={() => {
+                stopAlert();
+                dismiss();
+            }}
         />
     );
 }

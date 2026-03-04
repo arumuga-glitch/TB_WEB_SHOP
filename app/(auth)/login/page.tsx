@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { sendOtp } from "@/lib/auth";
 import { FaWhatsapp } from "react-icons/fa";
 import { SidebarIcon } from "@/components/ui/SidebarIcon";
+import { useAuthStore } from "@/store/authStore";
 
 export default function LoginPage() {
     const [mobile, setMobile] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
+    const accessToken = useAuthStore((s) => s.accessToken);
+
+    // ✅ If already logged in, redirect to dashboard immediately
+    useEffect(() => {
+        if (accessToken) {
+            router.replace("/dashboard");
+        }
+    }, [accessToken, router]);
 
     const isValid = /^[6-9]\d{9}$/.test(mobile);
 

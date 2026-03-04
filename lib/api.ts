@@ -20,8 +20,6 @@ const api = axios.create({
 
 let isRefreshing = false;
 let queue: ((token: string | null) => void)[] = [];
-let refreshRetryCount = 0;
-const MAX_REFRESH_RETRIES = 2;
 
 const resolveQueue = (token: string | null) => {
   queue.forEach(cb => cb(token));
@@ -48,13 +46,7 @@ api.interceptors.request.use((config) => {
 
 
 api.interceptors.response.use(
-  (res) => {
-    // Reset retry count on any successful response
-    if (!AUTH_FREE_ROUTES.some(route => res.config.url?.includes(route))) {
-      refreshRetryCount = 0;
-    }
-    return res;
-  },
+  (res) => res,
   async (error) => {
     const original = error.config;
 
@@ -64,38 +56,44 @@ api.interceptors.response.use(
       !original?._retry &&
       !AUTH_FREE_ROUTES.some(route => original.url?.includes(route))
     ) {
-      // If we are already refreshing, just queue this request
+      const store = useAuthStore.getState();
+
+      // 1. Check if token already changed (prevent redundant refresh if another request/tab did it)
+      const currentToken = store.accessToken;
+      const sentToken = original.headers.Authorization?.toString().split(" ")[1] || null;
+
+      if (currentToken && sentToken && currentToken !== sentToken) {
+        // Token has already been updated elsewhere (another request or tab), just retry
+        original._retry = true;
+        original.headers.Authorization = `Bearer ${currentToken}`;
+        return api(original);
+      }
+
+      // 2. If we are already refreshing, just queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           queue.push((token) => {
             if (!token) return reject(error);
+            // Mark as retried so we don't loop if it fails again
+            original._retry = true;
             original.headers.Authorization = `Bearer ${token}`;
             resolve(api(original));
           });
         });
       }
 
-      // Check max retries only when STARTING a new refresh session
-      if (refreshRetryCount >= MAX_REFRESH_RETRIES) {
-        console.error("❌ Max token refresh retries reached. Logging out...");
-        useAuthStore.getState().logout();
-        if (typeof window !== "undefined") window.location.replace("/");
-        return Promise.reject(error);
-      }
-
-      original._retry = true;
+      // 3. Start refresh process
       isRefreshing = true;
-      refreshRetryCount++;
 
       try {
+        const storedRefreshToken = store.refreshToken;
+        if (!storedRefreshToken) throw new Error("No refresh token available");
+
         const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
         const refreshPath = ENDPOINTS.AUTH.REFRESH_TOKEN.replace(/^\//, "");
         const refreshUrl = `${apiUrl}/${refreshPath}`;
 
-        console.warn(`🔄 Refreshing access token (Attempt ${refreshRetryCount})...`);
-
-        const store = useAuthStore.getState();
-        const storedRefreshToken = store.refreshToken;
+        console.warn(`🔄 Refreshing access token...`);
 
         const res = await axios.post(
           refreshUrl,
@@ -107,8 +105,9 @@ api.interceptors.response.use(
             withCredentials: true,
             headers: {
               "Content-Type": "application/json",
-              ...(storedRefreshToken ? { Authorization: `Bearer ${storedRefreshToken}` } : {})
-            }
+              Authorization: `Bearer ${storedRefreshToken}`
+            },
+            timeout: 15000 // 15s timeout
           }
         );
 
@@ -121,43 +120,62 @@ api.interceptors.response.use(
           throw new Error("No access token returned from refresh endpoint");
         }
 
+        // Update the store with new tokens
         store.setToken(newToken, newRefreshToken);
 
         isRefreshing = false;
         resolveQueue(newToken);
 
+        // Retry the original request with the new token
+        original._retry = true;
         original.headers.Authorization = `Bearer ${newToken}`;
-        // Important: reset retry count on successful refresh result
-        refreshRetryCount = 0;
-
         return api(original);
       } catch (refreshError: any) {
-        console.error("❌ Refresh token failed", refreshError);
         isRefreshing = false;
-        resolveQueue(null);
 
-        // Treat 400, 401, or 403 as session death for the refresh endpoint
         const failureStatus = refreshError.response?.status;
+        const errorMessage = refreshError.response?.data?.message || refreshError.message;
+        const isNetworkError = !refreshError.response;
+
+        console.error(`❌ Refresh token failed (Status: ${failureStatus || 'Network'}):`, errorMessage);
+
+        if (isNetworkError) {
+          // ⚠️ Network error (Offline, Timeout, etc.) - DON'T logout.
+          // Just resolve the queue with null so original requests fail gracefully.
+          resolveQueue(null);
+          return Promise.reject(refreshError);
+        }
+
+        // 🚪 Definitive Auth Failures
         if ([400, 401, 403].includes(failureStatus)) {
-          console.error("🚪 Refresh token rejected. Logging out...");
+          resolveQueue(null); // Clear queue before logout
+          console.error("🚪 Session expired or invalid. Logging out for security.");
           useAuthStore.getState().logout();
-          if (typeof window !== "undefined") window.location.replace("/");
+          if (typeof window !== "undefined") {
+            window.location.replace("/?reason=session_expired");
+          }
+        } else {
+          // Other server errors (500, etc.) - resolve queue with null
+          resolveQueue(null);
         }
 
         return Promise.reject(refreshError);
       }
     }
 
-    // If it WAS a retry and it still failed with 401, that's also a logout (Session died during retry)
+    // If it WAS already a retry and it still failed with 401, that's a mandatory logout
     if (error.response?.status === 401 && original?._retry) {
-      console.error("🚪 Retry failed with 401. Force logout for URL:", original.url);
+      console.error("🚪 Session recovery failed (401 on retry). Force logout.");
       useAuthStore.getState().logout();
-      if (typeof window !== "undefined") window.location.replace("/");
+      if (typeof window !== "undefined") {
+        window.location.replace("/?reason=auth_retry_failed");
+      }
     }
 
     return Promise.reject(error);
   }
 );
+
 
 export default api;
 
