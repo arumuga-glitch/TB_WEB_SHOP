@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://api2.thendralbooking.com/:path*",
+        // destination: "https://api2.thendralbooking.com/:path*",
+         destination: "http://localhost:8081/:path*",
       },
     ];
   },

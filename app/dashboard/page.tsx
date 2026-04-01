@@ -30,8 +30,10 @@ export default function DashboardPage() {
     }
   }, [userId, fetchShopByUser]);
 
+  const accessToken = useAuthStore((s) => s.accessToken);
+
   useEffect(() => {
-    if (!shop?.id) return;
+    if (!shop?.id || !accessToken) return;
 
     const fetchDashboard = async () => {
       setStatsLoading(true);
@@ -48,7 +50,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboard();
-  }, [shop?.id]);
+  }, [shop?.id, accessToken]);
 
   // Safe accessor helper for nested or flat status counts
   const getCount = (key: string) => {

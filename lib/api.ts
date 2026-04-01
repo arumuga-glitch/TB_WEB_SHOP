@@ -99,13 +99,11 @@ api.interceptors.response.use(
           refreshUrl,
           {
             refresh_token: storedRefreshToken,
-            refreshToken: storedRefreshToken
           },
           {
             withCredentials: true,
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${storedRefreshToken}`
             },
             timeout: 15000 // 15s timeout
           }
@@ -283,10 +281,19 @@ export const reverseGeocode = async (id: string, lat: number, lng: number) => {
 // Dashboard API
 
 export const getDashboardStats = async (shopId: string) => {
+  if (!shopId) {
+    throw new Error("getDashboardStats: shopId is required");
+  }
   try {
     const { data } = await api.get(ENDPOINTS.SERVICE_REQUEST.DASHBOARD(shopId));
     return data;
   } catch (error: any) {
+    console.error("getDashboardStats failed:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      url: error.config?.url,
+    });
     throw new Error(error.response?.data?.message || "Failed to fetch dashboard details");
   }
 };
